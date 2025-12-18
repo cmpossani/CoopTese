@@ -88,7 +88,9 @@ print(head(dados_do_banco))
 #remotes::install_github("MichelNivard/gptstudio")
 
 # For use needs API key
+
 api_key <- Sys.getenv("OPENAI_API_KEY")
+
 
 library(gptstudio)
 library(openai)

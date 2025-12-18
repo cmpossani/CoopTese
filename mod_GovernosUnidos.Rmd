@@ -1,0 +1,1174 @@
+---
+title: "Decomposição de Desempenho das Cooperativas de Crédito Brasileiras - Análise de Regressões Multinível"
+subtitle: "Janelas temporais estão baseadas nos períodos de governo UNIDOS"
+author: "Cleverton Marlon Possani"
+date: "`r Sys.Date()`"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+# Carregando pacotes necessários
+library(lme4)
+library(ggplot2)
+library(dplyr)
+library(tidyr)
+library(gridExtra)  # Para organizar os gráficos lado a lado
+
+```
+
+# **Introdução**
+
+
+> FHC (1995–2002): *Estabilidade e Privatizações*
+
+> Lula (2003–2010): *Crescimento e Inclusão Social*
+
+> Dilma (2011–2016): *Estímulo ao Crédito e Recessão*
+
+> Temer e Bolsonaro (2017–2022): *Reformas e Pandemia*
+
+
+## **Justificativa das Janelas Temporais**
+
+A escolha das janelas temporais foi baseada nos ciclos presidenciais do Brasil, agrupando os mandatos consecutivos de cada presidente em períodos distintos. Essa abordagem permite analisar o impacto econômico e político de cada governo sobre as cooperativas de crédito, capturando as influências políticas, econômicas e regulatórias que ocorreram durante esses mandatos.
+
+**FHC (1995–2002): 1º e 2º Mandato de Fernando Henrique Cardoso:**
+FHC (1995-2002): A janela de Fernando Henrique Cardoso engloba seus dois mandatos consecutivos (1995-1998 e 1999-2002). O Plano Real, que estabilizou a economia brasileira, foi implementado durante seu primeiro mandato, e o período subsequente foi marcado por privatizações e reformas estruturais. Esses anos foram fundamentais para a consolidação das políticas macroeconômicas no Brasil e tiveram um impacto importante sobre o sistema financeiro, incluindo as cooperativas de crédito.
+
+**Lula (2003–2010): 1º e 2º Mandato de Luiz Inácio Lula da Silva:**
+Lula (2003-2010): Essa janela abrange os dois mandatos de Luiz Inácio Lula da Silva (2003-2006 e 2007-2010), que foram marcados por um crescimento econômico significativo no Brasil, com políticas focadas no aumento da inclusão financeira, no crescimento do crédito, e em programas sociais como o Bolsa Família. O forte crescimento do crédito durante esse período teve impacto direto sobre as cooperativas de crédito, justificando a análise conjunta desse ciclo.
+
+**Dilma (2011–2016): 1º e 2º Mandato de Dilma Rousseff:**
+Dilma (2011-2016): Esta janela inclui os dois mandatos de Dilma Rousseff (2011-2014 e 2015-2016). A análise conjunta desse período é justificada pela continuidade de suas políticas econômicas, com foco em programas de incentivo ao crédito e inclusão social. Além disso, o período engloba a crise econômica que começou no final do seu segundo mandato, que teve um impacto significativo sobre o setor financeiro e as cooperativas de crédito. A escolha de agrupar esses anos visa capturar essas dinâmicas de forma coesa.
+
+**Temer e Bolsonaro (2017–2022): Michel Temer e Jair Bolsonaro:**
+Temer e Bolsonaro (2017-2022): Este período abrange dois anos do mandato de Michel Temer (2016-2018) e o mandato completo de Jair Bolsonaro (2019-2022). Esses anos representam a transição entre diferentes políticas econômicas e visões governamentais, incluindo reformas importantes promovidas durante o governo Temer, como a Reforma Trabalhista e a Emenda Constitucional do Teto de Gastos, bem como o impacto da pandemia de COVID-19 durante o governo Bolsonaro. Agrupar esses dois períodos permite captar como essas transições impactaram o desempenho das cooperativas de crédito, além de fornecer uma visão geral das dinâmicas recentes do mercado.
+
+
+---
+
+# **Resumo estatístico das Janelas Temporais:**
+```{r, estatisticas_janelas, echo=FALSE}
+# Exibir a tabela de estatísticas no relatório
+estatisticas_totais2
+
+```
+
+-
+```{r, estatisticas1_janelas_graficas, echo=FALSE}
+
+# Gráfico de barras comparando a média por janela temporal
+ggplot(estatisticas_totais2, aes(x = Janela, y = Media, fill = Janela)) +
+  geom_bar(stat = "identity") +
+  labs(title = "Comparação da Média de SOBRAS_POR_ATIVO por Janela Temporal",
+       x = "Janela Temporal", y = "Média de SOBRAS_POR_ATIVO") +
+  theme_minimal()
+
+```
+
+### Análise:
+
+
+
+---
+
+
+```{r, estatisticas2_janelas_graficas, echo=FALSE}
+# Gráfico de barras comparando a mediana por janela temporal
+ggplot(estatisticas_totais2, aes(x = Janela, y = Mediana, fill = Janela)) +
+  geom_bar(stat = "identity") +
+  labs(title = "Comparação da Mediana de SOBRAS_POR_ATIVO por Janela Temporal",
+       x = "Janela Temporal", y = "Mediana de SOBRAS_POR_ATIVO") +
+  theme_minimal()
+
+```
+
+### Análise:
+
+
+
+---
+
+```{r, estatisticas3_janelas_graficas, echo=FALSE}
+# Gráfico de barras comparando o desvio padrão por janela temporal
+ggplot(estatisticas_totais2, aes(x = Janela, y = Desvio_Padrao, fill = Janela)) +
+  geom_bar(stat = "identity") +
+  labs(title = "Comparação do Desvio Padrão de SOBRAS_POR_ATIVO por Janela Temporal",
+       x = "Janela Temporal", y = "Desvio Padrão de SOBRAS_POR_ATIVO") +
+  theme_minimal()
+
+
+```
+
+### Análise:
+
+
+---
+
+### **Comparação das médias de SOBRAS_POR_ATIVO por ano dentro de cada janela temporal**
+```{r, janelasANO, echo=FALSE}
+
+ggplot(estatisticas_totais_ano2, aes(x = ANO, y = Media, group = Janela, color = Janela)) +
+  geom_line(size = 1) +
+  geom_point(size = 3) +
+  labs(title = "Comparação da Média de SOBRAS_POR_ATIVO por Ano e Janela Temporal",
+       x = "Ano", y = "Média de SOBRAS_POR_ATIVO") +
+  theme_minimal() +
+  scale_x_continuous(breaks = estatisticas_totais_ano$ANO) +  # Exibir todos os anos no eixo X
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+```
+
+# Análise:
+
+
+```{r, janelasANO1, echo=FALSE}
+# Gráfico de barras agrupadas comparando a mediana de SOBRAS_POR_ATIVO por ano
+ggplot(estatisticas_totais_ano2, aes(x = factor(ANO), y = Mediana, fill = Janela)) +
+  geom_bar(stat = "identity", position = "dodge") +
+  labs(title = "Comparação da Mediana de SOBRAS_POR_ATIVO por Ano e Janela Temporal",
+       x = "Ano", y = "Mediana de SOBRAS_POR_ATIVO") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+```
+# Análise:
+
+```{r, echo=FALSE}
+ggplot(estatisticas_totais2, aes(x = Janela)) +
+  geom_point(aes(y = Media, color = "Média"), size = 3) +
+  geom_point(aes(y = Mediana, color = "Mediana"), size = 3) +
+  geom_point(aes(y = Desvio_Padrao, color = "Desvio Padrão"), size = 3) +
+  labs(title = "Comparação das Estatísticas de SOBRAS_POR_ATIVO por Janela Temporal",
+       x = "Janela Temporal", y = "Valores Estatísticos") +
+  theme_minimal() +
+  scale_color_manual(values = c("Média" = "blue", "Mediana" = "green", "Desvio Padrão" = "red"))
+```
+
+# Análise:
+
+## **Resumo estatístico da Janela Temer-Bolsonado:**
+```{r descricao_estatistica, echo=FALSE}
+est_munic <- calcular_estatisticas(df_TemerBolsonaro_filteredMunic, "Janela Temer-Bolsonaro (Município >= 3)")
+est_imed <- calcular_estatisticas(df_TemerBolsonaro_filteredImed, "Janela Temer-Bolsonaro (Reg. Imediata >= 5)")
+est_inter <- calcular_estatisticas(df_TemerBolsonaro_filteredIntermed, "Janela Temer-Bolsonaro (Reg. Intermediária >= 5)")
+est_UF <- calcular_estatisticas(df_TemerBolsonaro_filteredUF, "Janela Temer-Bolsonaro (Estado >= 5)")
+
+est_munic
+est_imed
+est_inter
+est_UF
+
+```
+
+```{r}
+## Mapa do ROA por Estado
+
+# Carregar o script que contém a função
+source("script_mapas.R")
+# Gerar o mapa para a janela "Temer e Bolsonaro (2017-2022)"
+gerar_mapa_roa(df_TemerBolsonaro, "Temer e Bolsonaro (2017 - 2022)")
+
+```
+
+
+## **Analisando os outliers da Janela Temer-Bolsonaro (2017 - 2022)**
+
+
+```{r, echo=FALSE }
+# Criando os dois boxplots
+
+resultadosTBMunic <- remover_outliers_zscore(df_TemerBolsonaro_filteredMunic, "SOBRAS_POR_ATIVO", threshold = 10)
+df_sem_outliers_ZscoreTBMunic <- resultadosTBMunic$df_sem_outliers
+df_com_outliers_ZscoreTBMunic <- resultadosTBMunic$df_com_outliers
+
+# Exibir a tibble formatada com kable
+df_com_outliers_ZscoreTBMunic %>%
+  kable() %>%
+  kable_styling(full_width = FALSE)
+
+
+novo <- calcular_estatisticas(df_sem_outliers_ZscoreTBMunic, "Janela TB (Z-score Município)")
+novo
+
+
+
+resultadosTBImed <- remover_outliers_zscore(df_TemerBolsonaro_filteredImed, "SOBRAS_POR_ATIVO", threshold = 10)
+df_sem_outliers_ZscoreTBImed <- resultadosTBImed$df_sem_outliers
+df_com_outliers_ZscoreTBImed <- resultadosTBImed$df_com_outliers
+
+# Exibir a tibble formatada com kable
+df_com_outliers_ZscoreTBImed %>%
+  kable() %>%
+  kable_styling(full_width = FALSE)
+
+
+novo <- calcular_estatisticas(df_sem_outliers_ZscoreTBImed, "Janela TB (Z-score Reg. Imed.)")
+novo
+
+
+resultadosTBInter <- remover_outliers_zscore(df_TemerBolsonaro_filteredIntermed, "SOBRAS_POR_ATIVO", threshold = 10)
+df_sem_outliers_ZscoreTBInter <- resultadosTBInter$df_sem_outliers
+df_com_outliers_ZscoreTBInter <- resultadosTBInter$df_com_outliers
+
+# Exibir a tibble formatada com kable
+df_com_outliers_ZscoreTBInter %>%
+  kable() %>%
+  kable_styling(full_width = FALSE)
+
+
+novo <- calcular_estatisticas(df_sem_outliers_ZscoreTBInter, "Janela TB (Z-score Reg. Inter.)")
+novo
+
+
+resultadosTB_UF <- remover_outliers_zscore(df_TemerBolsonaro_filteredUF, "SOBRAS_POR_ATIVO", threshold = 10)
+df_sem_outliers_ZscoreTB_UF <- resultadosTB_UF$df_sem_outliers
+df_com_outliers_ZscoreTB_UF <- resultadosTB_UF$df_com_outliers
+
+# Exibir a tibble formatada com kable
+df_com_outliers_ZscoreTB_UF %>%
+  kable() %>%
+  kable_styling(full_width = FALSE)
+
+
+novo <- calcular_estatisticas(df_sem_outliers_ZscoreTB_UF, "Janela TB (Z-score Estadual)")
+novo
+
+```
+
+
+```{r, echo=FALSE}
+p1 <- ggplot(df_TemerBolsonaro_filteredMunic, aes(y = SOBRAS_POR_ATIVO)) + 
+  geom_boxplot() + 
+  ggtitle("Todos as dados da Janela Temer-Bolsonaro \nMunicípio")
+
+p2 <- ggplot(df_sem_outliers_ZscoreTB, aes(y = SOBRAS_POR_ATIVO)) + 
+  geom_boxplot() + 
+  ggtitle("Janela Temer-Bolsonaro - Município \nsem Outliers a 10 desvios padrão")
+
+# Exibindo os gráficos lado a lado
+grid.arrange(p1, p2, ncol = 2)
+
+
+p1 <- ggplot(df_TemerBolsonaro_filteredImed, aes(y = SOBRAS_POR_ATIVO)) + 
+  geom_boxplot() + 
+  ggtitle("Todos as dados da Janela Temer-Bolsonaro \nReg. Imediata")
+
+p2 <- ggplot(df_sem_outliers_ZscoreTB, aes(y = SOBRAS_POR_ATIVO)) + 
+  geom_boxplot() + 
+  ggtitle("Janela Temer-Bolsonaro - Reg. Imediata \nsem Outliers a 10 desvios padrão")
+
+# Exibindo os gráficos lado a lado
+grid.arrange(p1, p2, ncol = 2)
+
+p1 <- ggplot(df_TemerBolsonaro_filteredIntermed, aes(y = SOBRAS_POR_ATIVO)) + 
+  geom_boxplot() + 
+  ggtitle("Todos as dados da Janela Temer-Bolsonaro \nReg. Intermediária")
+
+p2 <- ggplot(df_sem_outliers_ZscoreTB, aes(y = SOBRAS_POR_ATIVO)) + 
+  geom_boxplot() + 
+  ggtitle("Janela Temer-Bolsonaro - Reg. Intermediária \nsem Outliers a 10 desvios padrão")
+
+# Exibindo os gráficos lado a lado
+grid.arrange(p1, p2, ncol = 2)
+
+
+p1 <- ggplot(df_TemerBolsonaro_filteredUF, aes(y = SOBRAS_POR_ATIVO)) + 
+  geom_boxplot() + 
+  ggtitle("Todos as dados da Janela Temer-Bolsonaro \nReg. Intermediária")
+
+p2 <- ggplot(df_sem_outliers_ZscoreTB, aes(y = SOBRAS_POR_ATIVO)) + 
+  geom_boxplot() + 
+  ggtitle("Janela Temer-Bolsonaro - Reg. Intermediária \nsem Outliers a 10 desvios padrão")
+
+# Exibindo os gráficos lado a lado
+grid.arrange(p1, p2, ncol = 2)
+```
+
+
+
+```{r, echo=FALSE, message=FALSE, warning=FALSE, fig.width=10, fig.height=8}
+#Os outliers identificados como acima de 3 desvios padrão foram:
+#print(df_com_outliers_ZscoreTB[,c(1,2,9)])
+
+
+#Visão geral das distribuições, valores ausentes, contagens de categorias e estatísticas descritivas básicas.
+#summary(df_Bolsonaro)
+
+
+#Visão geral das distribuições, valores ausentes, contagens de categorias e estatísticas descritivas básicas após z-Score.
+#summary(df_sem_outliers_Zscore)
+
+df_filtered <- df_TemerBolsonaro_filteredMunic %>% filter(Ano == 2022)
+
+# Criar uma tabela de frequências para a quantidade de ocorrências por município
+freq_table <- df_filtered %>%
+  count(Localizacao_munic) %>%  # Conta quantas vezes cada município aparece
+  count(n)  # Conta quantas vezes cada contagem de município aparece
+
+# Gráfico de barras mostrando a quantidade de vezes que cada contagem de município ocorre
+p1 <- ggplot(freq_table, aes(x = factor(n), y = nn)) + 
+  geom_bar(stat = "identity") +
+  geom_text(aes(label = nn), vjust = -0.5) +  # Adiciona os números em cima das barras
+  labs(title = "Distribuição de Contagens por Município",
+       x = "Quantidade de Municípios",
+       y = "Frequência") +
+  theme_minimal()
+
+
+df_filtered <- df_TemerBolsonaro_filteredImed %>% filter(Ano == 2022)
+
+# Criar uma tabela de frequências para a quantidade de ocorrências por município
+freq_table <- df_filtered %>%
+  count(Localizacao_Imed) %>%  # Conta quantas vezes cada município aparece
+  count(n)  # Conta quantas vezes cada contagem de município aparece
+
+# Gráfico de barras mostrando a quantidade de vezes que cada contagem de município ocorre
+p2 <- ggplot(freq_table, aes(x = factor(n), y = nn)) + 
+  geom_bar(stat = "identity") +
+  geom_text(aes(label = nn), vjust = -0.5) +  # Adiciona os números em cima das barras
+  labs(title = "Distribuição de Contagens por Reg. Imediata",
+       x = "Quantidade de Reg. Imediata",
+       y = "Frequência") +
+  theme_minimal()
+
+
+df_filtered <- df_TemerBolsonaro_filteredIntermed %>% filter(Ano == 2022)
+
+# Criar uma tabela de frequências para a quantidade de ocorrências por município
+freq_table <- df_filtered %>%
+  count(Localizacao_Inter) %>%  # Conta quantas vezes cada município aparece
+  count(n)  # Conta quantas vezes cada contagem de município aparece
+
+# Gráfico de barras mostrando a quantidade de vezes que cada contagem de município ocorre
+p3 <- ggplot(freq_table, aes(x = factor(n), y = nn)) + 
+  geom_bar(stat = "identity") +
+  geom_text(aes(label = nn), vjust = -0.5) +  # Adiciona os números em cima das barras
+  labs(title = "Distribuição de Contagens por Reg. Intermediária",
+       x = "Quantidade de Reg. Intermediária",
+       y = "Frequência") +
+  theme_minimal()
+
+df_filtered <- df_TemerBolsonaro_filteredUF %>% filter(Ano == 2022)
+
+# Criar uma tabela de frequências para a quantidade de ocorrências por município
+freq_table <- df_filtered %>%
+  count(Localizacao_UF) %>%  # Conta quantas vezes cada município aparece
+  count(n)  # Conta quantas vezes cada contagem de município aparece
+
+# Gráfico de barras mostrando a quantidade de vezes que cada contagem de município ocorre
+p4 <- ggplot(df_TemerBolsonaro_filteredUF %>% filter(Ano == 2022), aes(x = factor(Localizacao_UF))) +
+  geom_bar() +
+  geom_text(stat = 'count', aes(label = ..count..), vjust = -0.5) +
+  labs(title = "Contagem por Localização Estadual", x = "Localização Estadual", y = "Contagem") +
+  theme_minimal()
+
+grid.arrange(p1, p2, p3, p4, ncol = 2)
+
+```
+
+---
+
+### Rodando a regressão usando **Modelos Lineares Mistos** com 3 níveis
+
+
+
+![Adicionar a fonte: Livro USP](https://media.licdn.com/dms/image/v2/C4D12AQGCQEID1CIabQ/article-inline_image-shrink_1500_2232/article-inline_image-shrink_1500_2232/0/1650822151583?e=1732752000&v=beta&t=-_BRi7I_dgUDg0iJedd2lKrZ_tLGj-KER2kx8NYPw9o){width=65%}
+
+
+
+O modelo multinível com 3 níveis pode ser expresso da seguinte forma:
+
+$$
+y_{tij} = \beta_0 + \beta_1 t_{tij} + u_{i(j)} + u_{j} + \epsilon_{tij}
+$$
+
+Onde:
+- \( y_{tij} \) é o valor observado do indivíduo \( i \), no grupo \( j \), no tempo \( t \).
+
+- \( \beta_0 \) é a intercepto global.
+
+- \( \beta_1 \cdot t_{tij} \) é o efeito fixo associado ao tempo \( t \).
+
+- \( u_{i(j)} \) é o efeito aleatório do indivíduo \( i \) dentro do grupo \( j \) (Nível 2).
+
+- \( u_{j} \) é o efeito aleatório do grupo \( j \) (Nível 3).
+
+- \( \epsilon_{tij} \) é o erro residual no nível 1.
+
+---
+
+### Neste estudo a equação fica:
+
+$$
+\text{SOBRAS_POR_ATIVO}_{tij} = \beta_0 + \beta_1 \cdot \text{Ano}_{tij} +\text{Cooperativa}_{i(j)} + \text{Localização}_{j} + \epsilon_{tij}
+$$
+Onde:
+
+- \( \text{SOBRAS_POR_ATIVO}_{tij} \): A variável dependente, que mede o desempenho das cooperativas.
+
+- \( \beta_0 \): A intercepto global.
+
+- \( \beta_1 \cdot \text{Ano}_{tij} \): O efeito fixo do tempo (Ano), que é o mesmo para todas as cooperativas e localizações.
+
+- \( \text{Cooperativa}_{i(j)} \): O efeito aleatório da **Unidade de Negócio**, que captura a variação entre as diferentes cooperativas.
+
+- \( \text{Localização}_{j} \): O efeito aleatório da **Localização (município | reg. imediata | reg. intermediária | estado)**, que captura a variação entre os diferentes localizações onde as cooperativas estão localizadas.
+
+- \( \epsilon_{tij} \): O termo de erro residual, representando a variabilidade que não é explicada pelos efeitos fixos e aleatórios.
+
+
+### Executando as regressões:
+
+```{r}
+
+mod_TemerBolsonaro_Munic <- lmer(SOBRAS_POR_ATIVO ~ Ano + (1 | Unidade_de_Negocio) + (1 | Localizacao_munic), data = df_sem_outliers_ZscoreTBMunic)
+summary(mod_TemerBolsonaro_Munic)
+
+mod_TemerBolsonaro_UF <- lmer(SOBRAS_POR_ATIVO ~ Ano + (1 | Unidade_de_Negocio) + (1 | Localizacao_UF) , data = df_sem_outliers_ZscoreTB_UF)
+summary(mod_TemerBolsonaro_UF)
+
+mod_TemerBolsonaro_Inter <- lmer(SOBRAS_POR_ATIVO ~ Ano + (1 | Unidade_de_Negocio) + (1 | Localizacao_Inter), data = df_sem_outliers_ZscoreTBInter)
+summary(mod_TemerBolsonaro_Inter)
+
+mod_TemerBolsonaro_Imed <- lmer(SOBRAS_POR_ATIVO ~ Ano + (1 | Unidade_de_Negocio) + (1 | Localizacao_Imed), data = df_sem_outliers_ZscoreTBImed)
+summary(mod_TemerBolsonaro_Imed)
+
+```
+
+```{r, echo=FALSE}
+# Gerar gráficos de pizza para cada modelo
+plot_UF <- plot_pizza_2D(mod_TemerBolsonaro_UF)
+plot_Inter <- plot_pizza_2D(mod_TemerBolsonaro_Inter)
+plot_Imed <- plot_pizza_2D(mod_TemerBolsonaro_Imed)
+plot_Munic <- plot_pizza_2D(mod_TemerBolsonaro_Munic)
+
+# Ajustar espaçamento para melhor utilização da área da tela
+grid.arrange(
+  plot_UF, plot_Inter,
+  plot_Imed, plot_Munic,
+  ncol = 2,
+  widths = c(1, 1),
+  heights = c(1, 1),
+  top = "Comparação dos Modelos da Janela Temer-Bolsonaro (2017 - 2022)"
+)
+
+```
+
+
+## **Componentes de variância lado a lado para análise quantitativa entre os modelos**.
+```{r, echo=FALSE}
+# Executar a comparação com os 4 modelos
+models <- list(mod_TemerBolsonaro_UF, mod_TemerBolsonaro_Inter, mod_TemerBolsonaro_Imed, mod_TemerBolsonaro_Munic)
+names <- c("Temer-Bolsonaro UF", "Temer-Bolsonaro Inter", "Temer-Bolsonaro Imed", "Temer-Bolsonaro Munic")
+
+comparison_table <- compare_variances(models, names)
+comparison_table
+```
+
+
+## **Comparando AIC e BIC para os modelos**
+```{r, echo=FALSE}
+
+model_comparison <- data.frame(
+  Model = c("Temer-Bolsonaro UF", "Temer-Bolsonaro Inter", "Temer-Bolsonaro Imed", "Temer-Bolsonaro Munic"),
+  AIC = c(AIC(mod_TemerBolsonaro_UF), AIC(mod_TemerBolsonaro_Inter), AIC(mod_TemerBolsonaro_Imed), AIC(mod_TemerBolsonaro_Munic)),
+  BIC = c(BIC(mod_TemerBolsonaro_UF), BIC(mod_TemerBolsonaro_Inter), BIC(mod_TemerBolsonaro_Imed), BIC(mod_TemerBolsonaro_Munic))
+)
+model_comparison
+
+```
+## **Resultado da Decomposição de Variância do Desempenho da janela temporal Gov. Bolsonaro (2019 - 2022)**
+
+
+<!-- ```{r, echo=FALSE} -->
+<!-- # Gerar gráficos de resíduos para cada modelo -->
+<!-- par(mfrow = c(2, 2))  # Configura a visualização 2x2 -->
+<!-- plot(residuals(mod_Bolsonaro_UF), main = "Resíduos - Bolsonaro UF") -->
+<!-- plot(residuals(mod_Bolsonaro_Inter), main = "Resíduos - Bolsonaro Inter") -->
+<!-- plot(residuals(mod_Bolsonaro_Imed), main = "Resíduos - Bolsonaro Imed") -->
+<!-- plot(residuals(mod_Bolsonaro_Munic), main = "Resíduos - Bolsonaro Munic") -->
+
+<!-- ``` -->
+
+---
+
+## **Resumo estatístico da Janela Dilma12:**
+```{r descricao_estatisticaDilma12, echo=FALSE}
+est_munic <- calcular_estatisticas(df_Dilma12_filteredMunic, "Janela Dilma12 (Município >= 3)")
+est_imed <- calcular_estatisticas(df_Dilma12_filteredImed, "Janela Dilma12 (Reg. Imediata >= 5)")
+est_inter <- calcular_estatisticas(df_Dilma12_filteredIntermed, "Janela Dilma12 (Reg. Intermediária >= 5)")
+est_UF <- calcular_estatisticas(df_Dilma12_filteredUF, "Janela Dilma12 (Estado >= 5)")
+
+est_munic
+est_imed
+est_inter
+est_UF
+
+```
+
+# **Início da análise das Regressões da Janela Dilma 1 e 2 ((2012 - 2015) e (2016 - 2017)) **
+
+```{r, echo=FALSE }
+# Criando os dois boxplots
+
+
+resultadosD12Munic <- remover_outliers_zscore(df_Dilma12_filteredMunic, "SOBRAS_POR_ATIVO", threshold = 10)
+df_sem_outliers_ZscoreD12Munic <- resultadosD12Munic$df_sem_outliers
+df_com_outliers_ZscoreD12Munic <- resultadosD12Munic$df_com_outliers
+
+# Exibir a tibble formatada com kable
+df_com_outliers_ZscoreD12Munic %>%
+  kable() %>%
+  kable_styling(full_width = FALSE)
+
+
+novo <- calcular_estatisticas(df_sem_outliers_ZscoreD12Munic, "Janela Dilma12 (Z-score Município)")
+novo
+
+resultadosD12Imed <- remover_outliers_zscore(df_Dilma12_filteredImed, "SOBRAS_POR_ATIVO", threshold = 10)
+df_sem_outliers_ZscoreD12Imed <- resultadosD12Imed$df_sem_outliers
+df_com_outliers_ZscoreD12Imed <- resultadosD12Imed$df_com_outliers
+
+# Exibir a tibble formatada com kable
+df_com_outliers_ZscoreD12Imed %>%
+  kable() %>%
+  kable_styling(full_width = FALSE)
+
+
+novo <- calcular_estatisticas(df_sem_outliers_ZscoreD12Imed, "Janela Dilma12 (Z-score Reg. Imediata)")
+novo
+
+resultadosD12Inter <- remover_outliers_zscore(df_Dilma12_filteredIntermed, "SOBRAS_POR_ATIVO", threshold = 10)
+df_sem_outliers_ZscoreD12Inter <- resultadosD12Inter$df_sem_outliers
+df_com_outliers_ZscoreD12Inter <- resultadosD12Inter$df_com_outliers
+
+# Exibir a tibble formatada com kable
+df_com_outliers_ZscoreD12Inter %>%
+  kable() %>%
+  kable_styling(full_width = FALSE)
+
+
+novo <- calcular_estatisticas(df_sem_outliers_ZscoreD12Inter, "Janela Dilma12 (Z-score Reg. Intermediária)")
+novo
+
+resultadosD12_UF <- remover_outliers_zscore(df_Dilma12_filteredUF, "SOBRAS_POR_ATIVO", threshold = 10)
+df_sem_outliers_ZscoreD12_UF <- resultadosD12_UF$df_sem_outliers
+df_com_outliers_ZscoreD12_UF <- resultadosD12_UF$df_com_outliers
+
+# Exibir a tibble formatada com kable
+df_com_outliers_ZscoreD12_UF %>%
+  kable() %>%
+  kable_styling(full_width = FALSE)
+
+
+novo <- calcular_estatisticas(df_sem_outliers_ZscoreD12_UF, "Janela Dilma12 (Z-score Estadual)")
+novo
+
+
+
+```
+
+
+```{r, echo=FALSE}
+
+ 
+
+p1 <- ggplot(df_Dilma12_filteredMunic, aes(y = SOBRAS_POR_ATIVO)) + 
+  geom_boxplot() + 
+  ggtitle("Todos as dados da Janela Dilma12 \nMunicípio")
+
+p2 <- ggplot(df_sem_outliers_ZscoreD12Munic, aes(y = SOBRAS_POR_ATIVO)) + 
+  geom_boxplot() + 
+  ggtitle("Janela Dilma12 - Município \nsem Outliers a 3 desvios padrão")
+
+# Exibindo os gráficos lado a lado
+grid.arrange(p1, p2, ncol = 2)
+
+
+p1 <- ggplot(df_Dilma12_filteredImed, aes(y = SOBRAS_POR_ATIVO)) + 
+  geom_boxplot() + 
+  ggtitle("Todos as dados da Janela Dilma12 \nReg. Imediata")
+
+p2 <- ggplot(df_sem_outliers_ZscoreD12Imed, aes(y = SOBRAS_POR_ATIVO)) + 
+  geom_boxplot() + 
+  ggtitle("Janela Dilma12 - Reg. Imediata \nsem Outliers a 3 desvios padrão")
+
+# Exibindo os gráficos lado a lado
+grid.arrange(p1, p2, ncol = 2)
+
+p1 <- ggplot(df_Dilma12_filteredIntermed, aes(y = SOBRAS_POR_ATIVO)) + 
+  geom_boxplot() + 
+  ggtitle("Todos as dados da Janela Dilma12 \nReg. Intermediária")
+
+p2 <- ggplot(df_sem_outliers_ZscoreD12Inter, aes(y = SOBRAS_POR_ATIVO)) + 
+  geom_boxplot() + 
+  ggtitle("Janela Dilma12 - Reg. Intermediária \nsem Outliers a 3 desvios padrão")
+
+# Exibindo os gráficos lado a lado
+grid.arrange(p1, p2, ncol = 2)
+
+p1 <- ggplot(df_Dilma12_filteredUF, aes(y = SOBRAS_POR_ATIVO)) + 
+  geom_boxplot() + 
+  ggtitle("Todos as dados da Janela Dilma12 \nEstadual")
+
+p2 <- ggplot(df_sem_outliers_ZscoreD12_UF, aes(y = SOBRAS_POR_ATIVO)) + 
+  geom_boxplot() + 
+  ggtitle("Janela Dilma12 - Estado \nsem Outliers a 3 desvios padrão")
+
+# Exibindo os gráficos lado a lado
+grid.arrange(p1, p2, ncol = 2)
+
+```
+
+
+
+```{r, echo=FALSE, message=FALSE, warning=FALSE, fig.width=10, fig.height=8}
+
+df_filtered <- df_Dilma12_filteredMunic %>% filter(Ano == 2015)
+
+# Criar uma tabela de frequências para a quantidade de ocorrências por município
+freq_table <- df_filtered %>%
+  count(Localizacao_munic) %>%  # Conta quantas vezes cada município aparece
+  count(n)  # Conta quantas vezes cada contagem de município aparece
+
+# Gráfico de barras mostrando a quantidade de vezes que cada contagem de município ocorre
+p1 <- ggplot(freq_table, aes(x = factor(n), y = nn)) + 
+  geom_bar(stat = "identity") +
+  geom_text(aes(label = nn), vjust = -0.5) +  # Adiciona os números em cima das barras
+  labs(title = "Distribuição de Contagens por Município (Janela Dilma12)",
+       x = "Quantidade de Municípios",
+       y = "Frequência") +
+  theme_minimal()
+
+
+df_filtered <- df_Dilma12_filteredImed %>% filter(Ano == 2015)
+
+# Criar uma tabela de frequências para a quantidade de ocorrências por município
+freq_table <- df_filtered %>%
+  count(Localizacao_Imed) %>%  # Conta quantas vezes cada município aparece
+  count(n)  # Conta quantas vezes cada contagem de município aparece
+
+# Gráfico de barras mostrando a quantidade de vezes que cada contagem de município ocorre
+p2 <- ggplot(freq_table, aes(x = factor(n), y = nn)) + 
+  geom_bar(stat = "identity") +
+  geom_text(aes(label = nn), vjust = -0.5) +  # Adiciona os números em cima das barras
+  labs(title = "Distribuição de Contagens por Reg. Imediata (Janela Dilma12)",
+       x = "Quantidade de Reg. Imediata",
+       y = "Frequência") +
+  theme_minimal()
+
+
+df_filtered <- df_Dilma12_filteredIntermed %>% filter(Ano == 2015)
+
+# Criar uma tabela de frequências para a quantidade de ocorrências por município
+freq_table <- df_filtered %>%
+  count(Localizacao_Inter) %>%  # Conta quantas vezes cada município aparece
+  count(n)  # Conta quantas vezes cada contagem de município aparece
+
+# Gráfico de barras mostrando a quantidade de vezes que cada contagem de município ocorre
+p3 <- ggplot(freq_table, aes(x = factor(n), y = nn)) + 
+  geom_bar(stat = "identity") +
+  geom_text(aes(label = nn), vjust = -0.5) +  # Adiciona os números em cima das barras
+  labs(title = "Distribuição de Contagens por Reg. Intermediária (Janela Dilma12)",
+       x = "Quantidade de Reg. Intermediária",
+       y = "Frequência") +
+  theme_minimal()
+
+# Gráfico de barras mostrando a quantidade de vezes que cada contagem de município ocorre
+p4 <- ggplot(df_Dilma12_filteredUF %>% filter(Ano == 2015), aes(x = factor(Localizacao_UF))) +
+  geom_bar() +
+  geom_text(stat = 'count', aes(label = ..count..), vjust = -0.5) +
+  labs(title = "Contagem por Localização Estadual", x = "Localização Estadual", y = "Contagem") +
+  theme_minimal()
+
+grid.arrange(p1, p2, p3, p4, ncol = 2)
+
+```
+
+---
+
+### Rodando a regressão usando **Modelos Lineares Mistos** com 2 níveis (1 - Unidade de Negócio; 2 - Localização. 
+
+##Estão sendo utilizadas as seguintes variáveis de localização: **Estado, Região Intermediária, Região Imediata e Município**. 
+
+```{r Dilma12, echo=TRUE}
+
+mod_Dilma12_Munic <- lmer(SOBRAS_POR_ATIVO ~ Ano + (1 | Unidade_de_Negocio) + (1 | Localizacao_munic), data = df_sem_outliers_ZscoreD12Munic)
+summary(mod_Dilma12_Munic)
+
+mod_Dilma12_UF <- lmer(SOBRAS_POR_ATIVO ~ Ano + (1 | Unidade_de_Negocio) + (1 | Localizacao_UF) , data = df_sem_outliers_ZscoreD12_UF)
+summary(mod_Dilma12_UF)
+
+mod_Dilma12_Inter <- lmer(SOBRAS_POR_ATIVO ~ Ano + (1 | Unidade_de_Negocio) + (1 | Localizacao_Inter), data = df_sem_outliers_ZscoreD12Inter)
+summary(mod_Dilma12_Inter)
+
+mod_Dilma12_Imed <- lmer(SOBRAS_POR_ATIVO ~ Ano + (1 | Unidade_de_Negocio) + (1 | Localizacao_Imed), data = df_sem_outliers_ZscoreD12Imed)
+summary(mod_Dilma12_Imed)
+
+
+```
+
+```{r Dilma2Plot, echo=FALSE}
+# Gerar gráficos de pizza para cada modelo
+plot_Munic <- plot_pizza_2D(mod_Dilma12_Munic)
+plot_Inter <- plot_pizza_2D(mod_Dilma12_Inter)
+plot_Imed <- plot_pizza_2D(mod_Dilma12_Imed)
+plot_UF <- plot_pizza_2D(mod_Dilma12_UF)
+
+
+# Ajustar espaçamento para melhor utilização da área da tela
+grid.arrange(
+  plot_UF, plot_Inter,
+  plot_Imed, plot_Munic,
+  ncol = 2,
+  widths = c(1, 1),
+  heights = c(1, 1),
+  top = "Comparação dos Modelos da Janela Dilma 1 E 2 ((2010 - 2014) (2015 - 2016))"
+)
+
+```
+
+
+## **Componentes de variância lado a lado para análise quantitativa entre os modelos**.
+```{r Dilma2Models, echo=FALSE}
+# Executar a comparação com os 4 modelos
+models <- list(mod_Dilma12_UF, mod_Dilma12_Inter, mod_Dilma12_Imed, mod_Dilma12_Munic)
+names <- c("Dilma12 UF", "Dilma12 Inter", "Dilma12 Imed", "Dilma12 Munic")
+
+comparison_table <- compare_variances(models, names)
+comparison_table
+```
+
+
+## **Comparando AIC e BIC para os modelos**
+```{r Dilma2IAC, echo=FALSE}
+
+model_comparison <- data.frame(
+  Model = c("Dilma12 UF", "Dilma12 Inter", "Dilma12 Imed", "Dilma12 Munic"),
+  AIC = c(AIC(mod_Dilma12_UF), AIC(mod_Dilma12_Inter), AIC(mod_Dilma12_Imed), AIC(mod_Dilma12_Munic)),
+  BIC = c(BIC(mod_Dilma12_UF), BIC(mod_Dilma12_Inter), BIC(mod_Dilma12_Imed), BIC(mod_Dilma12_Munic))
+)
+model_comparison
+
+```
+
+
+<!-- ```{r, echo=FALSE} -->
+<!-- # Gerar gráficos de resíduos para cada modelo -->
+<!-- par(mfrow = c(2, 2))  # Configura a visualização 2x2 -->
+<!-- plot(residuals(mod_Bolsonaro_UF), main = "Resíduos - Bolsonaro UF") -->
+<!-- plot(residuals(mod_Bolsonaro_Inter), main = "Resíduos - Bolsonaro Inter") -->
+<!-- plot(residuals(mod_Bolsonaro_Imed), main = "Resíduos - Bolsonaro Imed") -->
+<!-- plot(residuals(mod_Bolsonaro_Munic), main = "Resíduos - Bolsonaro Munic") -->
+
+<!-- ``` -->
+
+---
+
+## **Resumo estatístico da Janela Lula12:**
+```{r descricao_estatisticaLula12, echo=FALSE}
+est_munic <- calcular_estatisticas(df_Lula12_filteredMunic, "Janela Lula12 (Município >= 3)")
+est_imed <- calcular_estatisticas(df_Lula12_filteredImed, "Janela Lula12 (Reg. Imediata >= 5)")
+est_inter <- calcular_estatisticas(df_Lula12_filteredIntermed, "Janela Lula12 (Reg. Intermediária >= 5)")
+est_UF <- calcular_estatisticas(df_Lula12_filteredUF, "Janela Lula12 (Estado >= 5)")
+
+est_munic
+est_imed
+est_inter
+est_UF
+
+```
+
+# **Início da análise das Regressões da Janela Lula 1 e 2 ((2002 - 2005) (2006 - 2010))**
+```{r, echo=FALSE, include=TRUE}
+
+
+#resultadosL12Munic <- remover_outliers_zscore(df_Lula12_filteredMunic, "SOBRAS_POR_ATIVO")
+resultadosL12Munic <- remover_outliers_zscore(df_Lula12_filteredMunic, "SOBRAS_POR_ATIVO", threshold = 10)
+df_sem_outliers_ZscoreL12Munic <- resultadosL12Munic$df_sem_outliers
+df_com_outliers_ZscoreL12Munic <- resultadosL12Munic$df_com_outliers
+
+# Exibir a tibble formatada com kable
+df_com_outliers_ZscoreL12Munic %>%
+  kable() %>%
+  kable_styling(full_width = FALSE)
+
+
+novo <- calcular_estatisticas(df_sem_outliers_ZscoreL12Munic, "Janela Lula12 (Z-score Município)")
+novo
+
+#resultadosL12Imed <- remover_outliers_zscore(df_Lula12_filteredImed, "SOBRAS_POR_ATIVO")
+resultadosL12Imed <- remover_outliers_zscore(df_Lula12_filteredImed, "SOBRAS_POR_ATIVO", threshold = 10)
+df_sem_outliers_ZscoreL12Imed <- resultadosL12Imed$df_sem_outliers
+df_com_outliers_ZscoreL12Imed <- resultadosL12Imed$df_com_outliers
+
+# Exibir a tibble formatada com kable
+df_com_outliers_ZscoreL12Imed %>%
+  kable() %>%
+  kable_styling(full_width = FALSE)
+
+
+novo <- calcular_estatisticas(df_sem_outliers_ZscoreL12Imed, "Janela Lula12 (Z-score Reg. Imediata)")
+novo
+
+#resultadosL12Inter <- remover_outliers_zscore(df_Lula12_filteredIntermed, "SOBRAS_POR_ATIVO")
+resultadosL12Inter <- remover_outliers_zscore(df_Lula12_filteredIntermed, "SOBRAS_POR_ATIVO", threshold = 10)
+df_sem_outliers_ZscoreL12Inter <- resultadosL12Inter$df_sem_outliers
+df_com_outliers_ZscoreL12Inter <- resultadosL12Inter$df_com_outliers
+
+# Exibir a tibble formatada com kable
+df_com_outliers_ZscoreL12Inter %>%
+  kable() %>%
+  kable_styling(full_width = FALSE)
+
+
+novo <- calcular_estatisticas(df_sem_outliers_ZscoreL12Inter, "Janela Lula12 (Z-score Reg. Intermediária)")
+novo
+
+#resultadosL12_UF <- remover_outliers_zscore(df_Lula12_filteredUF, "SOBRAS_POR_ATIVO")
+resultadosL12_UF <- remover_outliers_zscore(df_Lula12_filteredUF, "SOBRAS_POR_ATIVO", threshold = 10)
+df_sem_outliers_ZscoreL12_UF <- resultadosL12_UF$df_sem_outliers
+df_com_outliers_ZscoreL12_UF <- resultadosL12_UF$df_com_outliers
+
+# Exibir a tibble formatada com kable
+df_com_outliers_ZscoreL12_UF %>%
+  kable() %>%
+  kable_styling(full_width = FALSE)
+
+
+novo <- calcular_estatisticas(df_sem_outliers_ZscoreL12_UF, "Janela Lula12 (Z-score Estadual)")
+novo
+
+
+```
+
+
+```{r, echo=FALSE}
+
+p1 <- ggplot(df_Lula12_filteredMunic, aes(y = SOBRAS_POR_ATIVO)) + 
+  geom_boxplot() + 
+  ggtitle("Todos as dados da Janela Lula12 \nMunicípio")
+
+p2 <- ggplot(df_sem_outliers_ZscoreL12Munic, aes(y = SOBRAS_POR_ATIVO)) + 
+  geom_boxplot() + 
+  ggtitle("Janela Lula12 - Município \nsem Outliers a 3 desvios padrão")
+
+# Exibindo os gráficos lado a lado
+grid.arrange(p1, p2, ncol = 2)
+
+
+p1 <- ggplot(df_Lula12_filteredImed, aes(y = SOBRAS_POR_ATIVO)) + 
+  geom_boxplot() + 
+  ggtitle("Todos as dados da Janela Lula12 \nReg. Imediata")
+
+p2 <- ggplot(df_sem_outliers_ZscoreL12Imed, aes(y = SOBRAS_POR_ATIVO)) + 
+  geom_boxplot() + 
+  ggtitle("Janela Lula12 - Reg. Imediata \nsem Outliers a 3 desvios padrão")
+# Exibindo os gráficos lado a lado
+grid.arrange(p1, p2, ncol = 2)
+
+
+p1 <- ggplot(df_Lula12_filteredIntermed, aes(y = SOBRAS_POR_ATIVO)) + 
+  geom_boxplot() + 
+  ggtitle("Todos as dados da Janela Lula12 \nReg. Intermediária")
+
+p2 <- ggplot(df_sem_outliers_ZscoreL12Inter, aes(y = SOBRAS_POR_ATIVO)) + 
+  geom_boxplot() + 
+  ggtitle("Janela Lula12 - Reg. Intermediária \nsem Outliers a 3 desvios padrão")
+# Exibindo os gráficos lado a lado
+grid.arrange(p1, p2, ncol = 2)
+
+p1 <- ggplot(df_Lula12_filteredUF, aes(y = SOBRAS_POR_ATIVO)) + 
+  geom_boxplot() + 
+  ggtitle("Todos as dados da Janela Lula12 \nEstado")
+
+p2 <- ggplot(df_sem_outliers_ZscoreL12_UF, aes(y = SOBRAS_POR_ATIVO)) + 
+  geom_boxplot() + 
+  ggtitle("Janela Lula12 - Estado \nsem Outliers a 3 desvios padrão")
+# Exibindo os gráficos lado a lado
+grid.arrange(p1, p2, ncol = 2)
+
+```
+
+
+```{r echo=FALSE, results='asis'}
+# Criar o summary dos dois dataframes
+summary_Lula12 <- capture.output(summary(df_Lula12_filteredMunic))
+summary_sem_outliersL12 <- capture.output(summary(df_sem_outliers_ZscoreL12Munic))
+
+# HTML para dividir a tela em duas colunas
+cat('<div style="display: flex;">')
+cat('<div style="flex: 1; padding-right: 10px;">')
+cat('<h3>Estatísticas antes de remover outliers (Município)</h3>')
+cat('<pre>', paste(summary_Lula12, collapse = "\n"), '</pre>')
+cat('</div>')
+
+cat('<div style="flex: 1; padding-left: 10px;">')
+cat('<h3>Estatísticas após remover outliers (Município) (Z-score 10 DP)</h3>')
+cat('<pre>', paste(summary_sem_outliersL12, collapse = "\n"), '</pre>')
+cat('</div>')
+cat('</div>')
+
+```
+
+
+
+---
+
+### Rodando a regressão usando **Modelos Lineares Mistos** com 3 níveis (1 - Ano; 2 - Unidade de Negócio; 3 - Localização. 
+
+##Estão sendo utilizadas as seguintes variáveis de localização: **Estado, Região Intermediária, Região Imediata e Município**. 
+
+```{r Lula12, echo=TRUE}
+
+mod_Lula12_Munic <- lmer(SOBRAS_POR_ATIVO ~ Ano + (1 | Unidade_de_Negocio) + (1 | Localizacao_munic), data = df_sem_outliers_ZscoreL12Munic)
+summary(mod_Lula12_Munic)
+
+mod_Lula12_UF <- lmer(SOBRAS_POR_ATIVO ~ Ano + (1 | Unidade_de_Negocio) + (1 | Localizacao_UF) , data = df_sem_outliers_ZscoreL12_UF)
+summary(mod_Lula12_UF)
+
+mod_Lula12_Inter <- lmer(SOBRAS_POR_ATIVO ~ Ano + (1 | Unidade_de_Negocio) + (1 | Localizacao_Inter), data = df_sem_outliers_ZscoreL12Inter)
+summary(mod_Lula12_Inter)
+
+mod_Lula12_Imed <- lmer(SOBRAS_POR_ATIVO ~ Ano + (1 | Unidade_de_Negocio) + (1 | Localizacao_Imed), data = df_sem_outliers_ZscoreL12Imed)
+summary(mod_Lula12_Imed)
+
+
+```
+
+```{r Lula2Plot, echo=FALSE}
+# Gerar gráficos de pizza para cada modelo
+plot_Munic <- plot_pizza_2D(mod_Lula12_Munic)
+plot_Imed <- plot_pizza_2D(mod_Lula12_Imed)
+plot_Inter <- plot_pizza_2D(mod_Lula12_Inter)
+plot_UF <- plot_pizza_2D(mod_Lula12_UF)
+
+
+# Ajustar espaçamento para melhor utilização da área da tela
+grid.arrange(
+  plot_UF, plot_Inter,
+  plot_Imed, plot_Munic,
+  ncol = 2,
+  widths = c(1, 1),
+  heights = c(1, 1),
+  top = "Comparação dos Modelos da Janela Lula1 e 2 ((2002 - 2005)(2006 - 2010))"
+)
+
+```
+
+
+## **Componentes de variância lado a lado para análise quantitativa entre os modelos**.
+```{r Lula2Models, echo=FALSE}
+# Executar a comparação com os 4 modelos
+models <- list(mod_Lula12_UF, mod_Lula12_Inter, mod_Lula12_Imed, mod_Lula12_Munic)
+names <- c("Lula12 UF", "Lula12 Inter", "Lula12 Imed", "Lula12 Munic")
+
+comparison_table <- compare_variances(models, names)
+comparison_table
+```
+
+
+## **Comparando AIC e BIC para os modelos**
+```{r Lula2IAC, echo=FALSE}
+
+model_comparison <- data.frame(
+  Model = c("Lula12 UF", "Lula12 Inter", "Lula12 Imed", "Lula12 Munic"),
+  AIC = c(AIC(mod_Lula12_UF), AIC(mod_Lula12_Inter), AIC(mod_Lula12_Imed), AIC(mod_Lula12_Munic)),
+  BIC = c(BIC(mod_Lula12_UF), BIC(mod_Lula12_Inter), BIC(mod_Lula12_Imed), BIC(mod_Lula12_Munic))
+)
+model_comparison
+
+```
+
+---
+
+## **Resumo estatístico da Janela FHC12:**
+```{r descricao_estatisticaFHC12, echo=FALSE}
+est_munic <- calcular_estatisticas(df_FHC12_filteredMunic, "Janela FHC12 (Município >= 3)")
+est_imed <- calcular_estatisticas(df_FHC12_filteredImed, "Janela FHC12 (Reg. Imediata >= 5)")
+est_inter <- calcular_estatisticas(df_FHC12_filteredIntermed, "Janela FHC12 (Reg. Intermediária >= 5)")
+est_UF <- calcular_estatisticas(df_FHC12_filteredUF, "Janela FHC12 (Estado >= 5)")
+
+est_munic
+est_imed
+est_inter
+est_UF
+
+```
+
+# **Início da análise das Regressões da Janela FHC 2 (1998 - 2001)**
+```{r df_FHC12, echo=FALSE, include=TRUE}
+
+
+resultadosFHC12Munic <- remover_outliers_zscore(df_FHC12_filteredMunic, "SOBRAS_POR_ATIVO", threshold = 10)
+df_sem_outliers_ZscoreFHC12Munic <- resultadosFHC12Munic$df_sem_outliers
+df_com_outliers_ZscoreFHC12Munic <- resultadosFHC12Munic$df_com_outliers
+
+# Exibir a tibble formatada com kable
+df_com_outliers_ZscoreFHC12Munic %>%
+  kable() %>%
+  kable_styling(full_width = FALSE)
+
+novo <- calcular_estatisticas(df_sem_outliers_ZscoreFHC12Munic, "Janela FHC12 (Z-score Município)")
+novo
+
+
+resultadosFHC12Imed<- remover_outliers_zscore(df_FHC12_filteredImed, "SOBRAS_POR_ATIVO", threshold = 10)
+df_sem_outliers_ZscoreFHC12Imed <- resultadosFHC12Imed$df_sem_outliers
+df_com_outliers_ZscoreFHC12Imed <- resultadosFHC12Imed$df_com_outliers
+
+# Exibir a tibble formatada com kable
+df_com_outliers_ZscoreFHC12Imed %>%
+  kable() %>%
+  kable_styling(full_width = FALSE)
+
+novo <- calcular_estatisticas(df_sem_outliers_ZscoreFHC12Imed, "Janela FHC12 (Z-score Reg. Imediata)")
+novo
+
+
+resultadosFHC12Inter<- remover_outliers_zscore(df_FHC12_filteredIntermed, "SOBRAS_POR_ATIVO", threshold = 10)
+df_sem_outliers_ZscoreFHC12Inter <- resultadosFHC12Inter$df_sem_outliers
+df_com_outliers_ZscoreFHC12Inter <- resultadosFHC12Inter$df_com_outliers
+
+# Exibir a tibble formatada com kable
+df_com_outliers_ZscoreFHC12Inter %>%
+  kable() %>%
+  kable_styling(full_width = FALSE)
+
+novo <- calcular_estatisticas(df_sem_outliers_ZscoreFHC12Inter, "Janela FHC12 (Z-score Reg. Intermediária)")
+novo
+
+resultadosFHC12_UF<- remover_outliers_zscore(df_FHC12_filteredUF, "SOBRAS_POR_ATIVO", threshold = 10)
+df_sem_outliers_ZscoreFHC12_UF <- resultadosFHC12_UF$df_sem_outliers
+df_com_outliers_ZscoreFHC12_UF <- resultadosFHC12_UF$df_com_outliers
+
+# Exibir a tibble formatada com kable
+df_com_outliers_ZscoreFHC12_UF %>%
+  kable() %>%
+  kable_styling(full_width = FALSE)
+
+novo <- calcular_estatisticas(df_sem_outliers_ZscoreFHC12_UF, "Janela FHC12 (Z-score Estadual)")
+novo
+
+
+```
+
+```{r, echo=FALSE}
+# Criando os dois boxplots
+p1 <- ggplot(df_FHC12_filteredMunic, aes(y = SOBRAS_POR_ATIVO)) + 
+  geom_boxplot() + 
+  ggtitle("Todos as dados da Janela FHC12 \nMunicípio")
+
+p2 <- ggplot(df_sem_outliers_ZscoreFHC12Munic, aes(y = SOBRAS_POR_ATIVO)) + 
+  geom_boxplot() + 
+  ggtitle("Janela FHC12 - Município \nsem Outliers a 10 desvios padrão")
+
+# Exibindo os gráficos lado a lado
+grid.arrange(p1, p2, ncol = 2)
+
+
+p1 <- ggplot(df_FHC12_filteredImed, aes(y = SOBRAS_POR_ATIVO)) + 
+  geom_boxplot() + 
+  ggtitle("Todos as dados da Janela FHC12 \nReg. Imediata")
+
+p2 <- ggplot(df_sem_outliers_ZscoreFHC12Imed, aes(y = SOBRAS_POR_ATIVO)) + 
+  geom_boxplot() + 
+  ggtitle("Janela FHC12 - Reg. Imediata \nsem Outliers a 10 desvios padrão")
+
+# Exibindo os gráficos lado a lado
+grid.arrange(p1, p2, ncol = 2)
+
+
+p1 <- ggplot(df_FHC12_filteredIntermed, aes(y = SOBRAS_POR_ATIVO)) + 
+  geom_boxplot() + 
+  ggtitle("Todos as dados da Janela FHC12 \nReg. Intermediária")
+
+p2 <- ggplot(df_sem_outliers_ZscoreFHC12Inter, aes(y = SOBRAS_POR_ATIVO)) + 
+  geom_boxplot() + 
+  ggtitle("Janela FHC12 - Reg. Intermediária \nsem Outliers a 10 desvios padrão")
+
+# Exibindo os gráficos lado a lado
+grid.arrange(p1, p2, ncol = 2)
+
+
+p1 <- ggplot(df_FHC12_filteredUF, aes(y = SOBRAS_POR_ATIVO)) + 
+  geom_boxplot() + 
+  ggtitle("Todos as dados da Janela FHC12 \nEstado")
+
+p2 <- ggplot(df_sem_outliers_ZscoreFHC12_UF, aes(y = SOBRAS_POR_ATIVO)) + 
+  geom_boxplot() + 
+  ggtitle("Janela FHC12 - Estado \nsem Outliers a 10 desvios padrão")
+
+# Exibindo os gráficos lado a lado
+grid.arrange(p1, p2, ncol = 2)
+
+```
+
+---
+
+
+```{r FHC2, echo=TRUE}
+mod_FHC12_Munic <- lmer(SOBRAS_POR_ATIVO ~ Ano + (1 | Unidade_de_Negocio) + (1 | Localizacao_munic), data = df_sem_outliers_ZscoreFHC12Munic)
+summary(mod_FHC12_Munic)
+
+mod_FHC12_UF <- lmer(SOBRAS_POR_ATIVO ~ Ano + (1 | Unidade_de_Negocio) + (1 | Localizacao_UF) , data = df_sem_outliers_ZscoreFHC12_UF)
+summary(mod_FHC12_UF)
+
+mod_FHC12_Inter <- lmer(SOBRAS_POR_ATIVO ~ Ano + (1 | Unidade_de_Negocio) + (1 | Localizacao_Inter), data = df_sem_outliers_ZscoreFHC12Inter)
+summary(mod_FHC12_Inter)
+
+mod_FHC12_Imed <- lmer(SOBRAS_POR_ATIVO ~ Ano + (1 | Unidade_de_Negocio) + (1 | Localizacao_Imed), data = df_sem_outliers_ZscoreFHC12Imed)
+summary(mod_FHC12_Imed)
+
+```
+
+```{r FHC2Plot, echo=FALSE}
+# Gerar gráficos de pizza para cada modelo
+plot_UF <- plot_pizza_2D(mod_FHC12_UF)
+plot_Inter <- plot_pizza_2D(mod_FHC12_Inter)
+plot_Imed <- plot_pizza_2D(mod_FHC12_Imed)
+plot_Munic <- plot_pizza_2D(mod_FHC12_Munic)
+
+# Ajustar espaçamento para melhor utilização da área da tela
+grid.arrange(
+  plot_UF, plot_Inter,
+  plot_Imed, plot_Munic,
+  ncol = 2,
+  widths = c(1, 1),
+  heights = c(1, 1),
+  top = "Comparação dos Modelos da Janela FHC 1 e 2 (1995 - 1998)(1999 - 2002)"
+)
+
+```
+
+
+## **Componentes de variância lado a lado para análise quantitativa entre os modelos**.
+```{r FHC2Models, echo=FALSE}
+# Executar a comparação com os 4 modelos
+models <- list(mod_FHC12_UF, mod_FHC12_Inter, mod_FHC12_Imed, mod_FHC12_Munic)
+names <- c("FHC12 UF", "FHC12 Inter", "FHC12 Imed", "FHC12 Munic")
+
+comparison_table <- compare_variances(models, names)
+comparison_table
+```
+
+
+## **Comparando AIC e BIC para os modelos**
+```{r FHC2IAC, echo=FALSE}
+
+model_comparison <- data.frame(
+  Model = c("FHC12 UF", "FHC12 Inter", "FHC12 Imed", "FHC12 Munic"),
+  AIC = c(AIC(mod_FHC12_UF), AIC(mod_FHC12_Inter), AIC(mod_FHC12_Imed), AIC(mod_FHC12_Munic)),
+  BIC = c(BIC(mod_FHC12_UF), BIC(mod_FHC12_Inter), BIC(mod_FHC12_Imed), BIC(mod_FHC12_Munic))
+)
+model_comparison
+
+```
+
+---
+
+---
+
+

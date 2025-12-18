@@ -1,0 +1,267 @@
+---
+title: "Resultados"
+author: "Cleverton Marlon Possani"
+date: "2024-10-09"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r resultados, echo=FALSE, eval=FALSE}
+
+mod_TemerBolsonaro_Munic
+mod_TemerBolsonaro_UF
+mod_TemerBolsonaro_Inter
+mod_TemerBolsonaro_Imed
+
+mod_Dilma12_Munic
+mod_Dilma12_UF
+mod_Dilma12_Inter
+mod_Dilma12_Imed
+
+mod_Lula12_Munic
+mod_Lula12_UF
+mod_Lula12_Inter
+mod_Lula12_Imed
+
+mod_FHC12_Munic
+mod_FHC12_UF
+mod_FHC12_Inter
+mod_FHC12_Imed
+
+
+```
+
+```{r Munic, echo=FALSE}
+library(nlme)
+efeitos_aleatorios_janelaTB <- as.data.frame(VarCorr(mod_TemerBolsonaro_Munic))
+efeitos_aleatorios_janelaD12 <- as.data.frame(VarCorr(mod_Dilma12_Munic))
+efeitos_aleatorios_janelaL12 <- as.data.frame(VarCorr(mod_Lula12_Munic))
+efeitos_aleatorios_janelaFHC12 <- as.data.frame(VarCorr(mod_FHC12_Munic))
+
+# Gerar os DataFrames dos efeitos aleatórios a partir dos modelos
+efeitos_aleatorios_janelaTB <- as.data.frame(VarCorr(mod_TemerBolsonaro_Munic)) %>% 
+  mutate(Modelo = "Temer-Bolsonaro")
+efeitos_aleatorios_janelaD12 <- as.data.frame(VarCorr(mod_Dilma12_Munic)) %>% 
+  mutate(Modelo = "Dilma12")
+efeitos_aleatorios_janelaL12 <- as.data.frame(VarCorr(mod_Lula12_Munic)) %>% 
+  mutate(Modelo = "Lula12")
+efeitos_aleatorios_janelaFHC12 <- as.data.frame(VarCorr(mod_FHC12_Munic)) %>% 
+  mutate(Modelo = "FHC12")
+
+
+#Combinar todos os DataFrames em um único
+
+efeitos_aleatorios_comb <- bind_rows(
+  efeitos_aleatorios_janelaTB,
+  efeitos_aleatorios_janelaD12,
+  efeitos_aleatorios_janelaL12,
+  efeitos_aleatorios_janelaFHC12
+)
+
+# Comparação das variâncias dos efeitos aleatórios por janela e grupo com valores
+ggplot(efeitos_aleatorios_comb, aes(x = grp, y = vcov, fill = Modelo)) +
+  geom_bar(stat = "identity", position = "dodge") +
+  geom_text(aes(label = round(vcov, 5)), 
+            position = position_dodge(0.9), 
+            vjust = -0.3, 
+            size = 3) +
+  labs(title = "Comparação das Variâncias dos Efeitos Aleatórios por Janela",
+       x = "Grupo de Efeito Aleatório",
+       y = "Variância (vcov)",
+       fill = "Modelo") +
+  theme_minimal()
+
+# Comparação dos desvios padrão dos efeitos aleatórios por janela e grupo com valores
+ggplot(efeitos_aleatorios_comb, aes(x = grp, y = sdcor, fill = Modelo)) +
+  geom_bar(stat = "identity", position = "dodge") +
+  geom_text(aes(label = round(sdcor, 5)), 
+            position = position_dodge(0.9), 
+            vjust = -0.3, 
+            size = 3) +
+  labs(title = "Comparação dos Desvios Padrão dos Efeitos Aleatórios por Janela",
+       x = "Grupo de Efeito Aleatório",
+       y = "Desvio Padrão (sdcor)",
+       fill = "Modelo") +
+  theme_minimal()
+
+# Intervalos de Confiança
+# Supondo que n seja o número de observações em cada DataFrame (ajuste conforme necessário)
+n_TB <- nrow(efeitos_aleatorios_janelaTB)
+n_D12 <- nrow(efeitos_aleatorios_janelaD12)
+n_L12 <- nrow(efeitos_aleatorios_janelaL12)
+n_FHC12 <- nrow(efeitos_aleatorios_janelaFHC12)
+
+# Adicionar os intervalos de confiança a cada DataFrame
+efeitos_aleatorios_janelaTB <- efeitos_aleatorios_janelaTB %>%
+  rowwise() %>%
+  mutate(
+    Lower = calcular_intervalo_sd(sdcor, n_TB)[1],
+    Upper = calcular_intervalo_sd(sdcor, n_TB)[2]
+  )
+
+efeitos_aleatorios_janelaD12 <- efeitos_aleatorios_janelaD12 %>%
+  rowwise() %>%
+  mutate(
+    Lower = calcular_intervalo_sd(sdcor, n_D12)[1],
+    Upper = calcular_intervalo_sd(sdcor, n_D12)[2]
+  )
+
+efeitos_aleatorios_janelaL12 <- efeitos_aleatorios_janelaL12 %>%
+  rowwise() %>%
+  mutate(
+    Lower = calcular_intervalo_sd(sdcor, n_L12)[1],
+    Upper = calcular_intervalo_sd(sdcor, n_L12)[2]
+  )
+
+efeitos_aleatorios_janelaFHC12 <- efeitos_aleatorios_janelaFHC12 %>%
+  rowwise() %>%
+  mutate(
+    Lower = calcular_intervalo_sd(sdcor, n_FHC12)[1],
+    Upper = calcular_intervalo_sd(sdcor, n_FHC12)[2]
+  )
+
+# Combinar os DataFrames em um único para visualização
+ci_comparacao <- bind_rows(
+  efeitos_aleatorios_janelaTB %>% mutate(Janela = "Temer-Bolsonaro"),
+  efeitos_aleatorios_janelaD12 %>% mutate(Janela = "Dilma12"),
+  efeitos_aleatorios_janelaL12 %>% mutate(Janela = "Lula12"),
+  efeitos_aleatorios_janelaFHC12 %>% mutate(Janela = "FHC12")
+)
+
+# Visualizar em um gráfico
+ggplot(ci_comparacao, aes(x = grp, ymin = Lower, ymax = Upper, color = Janela)) +
+  geom_errorbar(position = position_dodge(0.5), width = 0.2) +
+  geom_point(aes(y = sdcor), position = position_dodge(0.5)) +
+  labs(title = "Intervalos de Confiança dos Efeitos Aleatórios (Desvio Padrão)",
+       x = "Grupo de Efeito Aleatório",
+       y = "Desvio Padrão com Intervalo de Confiança",
+       color = "Modelo") +
+  theme_minimal()
+
+
+#Análise da Variância Intraclasse (ICC)
+
+# Carregar pacotes necessários
+library(lme4)
+
+# Supondo que vc tenha modelos ajustados para cada janela
+# Calcular a variância dos componentes
+varcomp_TB <- as.data.frame(efeitos_aleatorios_janelaTB)
+varcomp_D12 <- as.data.frame(efeitos_aleatorios_janelaD12)
+varcomp_L12 <- as.data.frame(efeitos_aleatorios_janelaL12)
+varcomp_FHC12 <- as.data.frame(efeitos_aleatorios_janelaFHC12)
+
+# Calcular a ICC para Unidade_de_Negocio em cada janela (ajustar variância residual conforme necessário)
+icc_TB <- varcomp_TB$vcov[varcomp_TB$grp == "Unidade_de_Negocio"] /
+  sum(varcomp_TB$vcov)
+icc_D12 <- varcomp_D12$vcov[varcomp_D12$grp == "Unidade_de_Negocio"] /
+  sum(varcomp_D12$vcov)
+icc_L12 <- varcomp_L12$vcov[varcomp_L12$grp == "Unidade_de_Negocio"] /
+  sum(varcomp_L12$vcov)
+icc_FHC12 <- varcomp_FHC12$vcov[varcomp_FHC12$grp == "Unidade_de_Negocio"] /
+  sum(varcomp_FHC12$vcov)
+
+# Exibir os resultados da ICC
+print(paste("ICC - Temer-Bolsonaro:", round(icc_TB, 3)))
+print(paste("ICC - Dilma12:", round(icc_D12, 3)))
+print(paste("ICC - Lula12:", round(icc_L12, 3)))
+print(paste("ICC - FHC12:", round(icc_FHC12, 3)))
+
+
+
+#Análise de Efeitos Aleatórios Preditos (BLUPs)
+
+# Carregar pacotes necessários
+library(dplyr)
+library(ggplot2)
+
+# Supondo que vc tenha modelos ajustados para cada janela
+
+# Adicionar as estimativas de efeitos aleatórios (BLUPs) para cada janela
+ranef_TB <- efeitos_aleatorios_janelaTB
+ranef_D12 <- efeitos_aleatorios_janelaD12
+ranef_L12 <- efeitos_aleatorios_janelaL12
+ranef_FHC12 <- efeitos_aleatorios_janelaFHC12
+
+# Combinar os efeitos aleatórios preditos para comparação
+blups <- bind_rows(
+  ranef_TB %>% mutate(Janela = "Temer-Bolsonaro"),
+  ranef_D12 %>% mutate(Janela = "Dilma12"),
+  ranef_L12 %>% mutate(Janela = "Lula12"),
+  ranef_FHC12 %>% mutate(Janela = "FHC12")
+)
+
+# Visualizar em um gráfico de pontos
+ggplot(blups, aes(x = grp, y = sdcor, color = Janela)) +
+  geom_point(position = position_jitter(width = 0.2), alpha = 0.6) +
+  labs(title = "Comparação dos Efeitos Aleatórios Preditos",
+       x = "Grupo de Efeito Aleatório",
+       y = "Desvio Padrão dos Efeitos Aleatórios (sdcor)") +
+  theme_minimal()
+
+
+#Decomposição da Variância Total
+
+# Carregar pacotes necessários
+library(ggplot2)
+
+# Adicionar as variâncias para cada janela temporal
+varcomp_TB <- efeitos_aleatorios_janelaTB %>% mutate(Janela = "Temer-Bolsonaro")
+varcomp_D12 <- efeitos_aleatorios_janelaD12 %>% mutate(Janela = "Dilma12")
+varcomp_L12 <- efeitos_aleatorios_janelaL12 %>% mutate(Janela = "Lula12")
+varcomp_FHC12 <- efeitos_aleatorios_janelaFHC12 %>% mutate(Janela = "FHC12")
+
+# Calcular proporções da variância total para cada janela
+varcomp_combinado <- bind_rows(varcomp_TB, varcomp_D12, varcomp_L12, varcomp_FHC12) %>%
+  group_by(Janela) %>%
+  mutate(Proporcao = vcov / sum(vcov))
+
+# Visualizar proporções em um gráfico de barras
+ggplot(varcomp_combinado, aes(x = grp, y = Proporcao, fill = Janela)) +
+  geom_bar(stat = "identity", position = "dodge") +
+  geom_text(aes(label = round(Proporcao, 3)), 
+            position = position_dodge(0.9), 
+            vjust = -0.3, 
+            size = 3) +
+  labs(title = "Decomposição da Variância Total por Janela",
+       x = "Componente Aleatório",
+       y = "Proporção da Variância",
+       fill = "Janela") +
+  theme_minimal()
+
+# Análise de Bootstrapping dos Efeitos Aleatórios
+ci_TB_boot <- bootstrap_effects(mod_TemerBolsonaro)
+ci_D12_boot <- bootstrap_effects(mod_Dilma12)
+ci_L12_boot <- bootstrap_effects(mod_Lula12)
+ci_FHC12_boot <- bootstrap_effects(mod_FHC12)
+
+# Exibir os intervalos de confiança resultantes
+print(paste("IC 95% - Temer-Bolsonaro:", ci_TB_boot))
+print(paste("IC 95% - Dilma12:", ci_D12_boot))
+print(paste("IC 95% - Lula12:", ci_L12_boot))
+print(paste("IC 95% - FHC12:", ci_FHC12_boot))
+
+# Criar um data frame para armazenar os intervalos de confiança
+intervalos_ci <- data.frame(
+  Janela = c("Temer-Bolsonaro", "Dilma12", "Lula12", "FHC12"),
+  Lower = c(ci_TB_boot[1], ci_D12_boot[1], ci_L12_boot[1], ci_FHC12_boot[1]),
+  Upper = c(ci_TB_boot[2], ci_D12_boot[2], ci_L12_boot[2], ci_FHC12_boot[2])
+)
+
+# Exibir a tabela
+print(intervalos_ci)
+
+# Criar um gráfico para comparar os intervalos de confiança
+ggplot(intervalos_ci, aes(x = Janela, ymin = Lower, ymax = Upper, color = Janela)) +
+  geom_errorbar(width = 0.2) +
+  geom_point(aes(y = (Lower + Upper) / 2), size = 2) +
+  labs(title = "Intervalos de Confiança dos Efeitos Aleatórios por Janela",
+       x = "Período",
+       y = "Intervalo de Confiança (Desvio Padrão)") +
+  theme_minimal()
+
+
+```

@@ -1,0 +1,4 @@
+"grp","var1","var2","vcov","sdcor","Modelo"
+"Unidade_de_Negocio","(Intercept)",NA,0.000707889904415142,0.0266062004881408,"Lula 12"
+"Localizacao_munic","(Intercept)",NA,0.000209664407006893,0.0144797930581515,"Lula 12"
+"Residual",NA,NA,0.000963599186886129,0.0310418940608676,"Lula 12"

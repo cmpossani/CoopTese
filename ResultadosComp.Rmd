@@ -1,0 +1,222 @@
+---
+title: "ResultadosComp"
+author: "Cleverton Marlon Possani"
+date: "2024-10-09"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+```{r fonte, echo=FALSE, eval=FALSE}
+library(nlme)
+mod_TemerBolsonaro_Munic
+mod_TemerBolsonaro_UF
+mod_TemerBolsonaro_Inter
+mod_TemerBolsonaro_Imed
+
+mod_Dilma12_Munic
+mod_Dilma12_UF
+mod_Dilma12_Inter
+mod_Dilma12_Imed
+
+mod_Lula12_Munic
+mod_Lula12_UF
+mod_Lula12_Inter
+mod_Lula12_Imed
+
+mod_FHC12_Munic
+mod_FHC12_UF
+mod_FHC12_Inter
+mod_FHC12_Imed
+```
+```{r}
+
+### Comparação das Variâncias dos Efeitos Aleatórios
+# Extrair variâncias dos efeitos aleatórios
+var_municipio <- as.data.frame(VarCorr(mod_TemerBolsonaro_Munic))
+var_imediata <- as.data.frame(VarCorr(mod_TemerBolsonaro_Imed))
+var_intermediaria <- as.data.frame(VarCorr(mod_TemerBolsonaro_Inter))
+var_estado <- as.data.frame(VarCorr(mod_TemerBolsonaro_UF))
+
+# Combinar variâncias para comparação
+variancias_comp <- bind_rows(
+  var_municipio %>% mutate(Localizacao = "Municipio"),
+  var_imediata %>% mutate(Localizacao = "Região Imediata"),
+  var_intermediaria %>% mutate(Localizacao = "Região Intermediária"),
+  var_estado %>% mutate(Localizacao = "Estado")
+)
+
+# Visualizar em um gráfico de barras para comparar as variâncias
+ggplot(variancias_comp, aes(x = Localizacao, y = vcov, fill = Localizacao)) +
+  geom_bar(stat = "identity") +
+  geom_text(aes(label = round(vcov, 5)), vjust = -0.3) +
+  labs(title = "Comparação das Variâncias dos Efeitos Aleatórios por Localização da Janela TB",
+       x = "Nível de Localização",
+       y = "Variância (vcov)",
+       fill = "Localização") +
+  theme_minimal()
+
+### Comparação dos Modelos via AIC e BIC
+# Obter AIC e BIC de cada modelo
+aic_bic <- data.frame(
+  Localizacao = c("Municipio", "Região Imediata", "Região Intermediária", "Estado"),
+  AIC = c(AIC(mod_TemerBolsonaro_Munic), AIC(mod_TemerBolsonaro_Imed), AIC(mod_TemerBolsonaro_Inter), AIC(mod_TemerBolsonaro_UF)),
+  BIC = c(BIC(mod_TemerBolsonaro_Munic), BIC(mod_TemerBolsonaro_Imed), BIC(mod_TemerBolsonaro_Inter), BIC(mod_TemerBolsonaro_UF))
+)
+
+# Visualizar a tabela de AIC e BIC
+print(aic_bic)
+
+# Visualizar em um gráfico para comparar AIC e BIC
+ggplot(aic_bic, aes(x = Localizacao)) +
+  geom_bar(aes(y = AIC, fill = "AIC"), stat = "identity", position = "dodge") +
+  geom_bar(aes(y = BIC, fill = "BIC"), stat = "identity", position = "dodge") +
+  labs(title = "Comparação de AIC e BIC por Nível de Localização",
+       x = "Nível de Localização",
+       y = "Valor",
+       fill = "Critério") +
+  theme_minimal()
+
+### Análise da Proporção da Variância Explicada (PVE)
+
+# Extrair as variâncias diretamente dos modelos
+var_municipio <- as.data.frame(VarCorr(mod_TemerBolsonaro_Munic))$vcov
+var_imediata <- as.data.frame(VarCorr(mod_TemerBolsonaro_Imed))$vcov
+var_intermediaria <- as.data.frame(VarCorr(mod_TemerBolsonaro_Inter))$vcov
+var_estado <- as.data.frame(VarCorr(mod_TemerBolsonaro_UF))$vcov
+
+# Calcular a variância residual de cada modelo (último valor em `vcov` geralmente)
+var_residual_municipio <- attr(VarCorr(mod_TemerBolsonaro_Munic), "sc")^2
+var_residual_imediata <- attr(VarCorr(mod_TemerBolsonaro_Imed), "sc")^2
+var_residual_intermediaria <- attr(VarCorr(mod_TemerBolsonaro_Inter), "sc")^2
+var_residual_estado <- attr(VarCorr(mod_TemerBolsonaro_UF), "sc")^2
+
+# Calcular a PVE para cada nível de localização
+pve_municipio <- var_municipio[1] / (var_municipio[1] + var_residual_municipio)
+pve_imediata <- var_imediata[1] / (var_imediata[1] + var_residual_imediata)
+pve_intermediaria <- var_intermediaria[1] / (var_intermediaria[1] + var_residual_intermediaria)
+pve_estado <- var_estado[1] / (var_estado[1] + var_residual_estado)
+
+# Substituir valores nulos ou negativos por zero (apenas como precaução)
+pve_municipio <- ifelse(is.na(pve_municipio) | pve_municipio < 0, 0, pve_municipio)
+pve_imediata <- ifelse(is.na(pve_imediata) | pve_imediata < 0, 0, pve_imediata)
+pve_intermediaria <- ifelse(is.na(pve_intermediaria) | pve_intermediaria < 0, 0, pve_intermediaria)
+pve_estado <- ifelse(is.na(pve_estado) | pve_estado < 0, 0, pve_estado)
+
+# Criar o DataFrame com as PVE
+pve_data <- data.frame(
+  Localizacao = c("Municipio", "Região Imediata", "Região Intermediária", "Estado"),
+  PVE = c(pve_municipio, pve_imediata, pve_intermediaria, pve_estado)
+)
+
+# Visualizar o DataFrame
+print(pve_data)
+
+# Visualizar em um gráfico de barras
+ggplot(pve_data, aes(x = Localizacao, y = PVE, fill = Localizacao)) +
+  geom_bar(stat = "identity") +
+  geom_text(aes(label = round(PVE, 3)), vjust = -0.3) +
+  labs(title = "Proporção da Variância Explicada (PVE) por Nível de Localização",
+       x = "Nível de Localização",
+       y = "PVE",
+       fill = "Localização") +
+  theme_minimal()
+
+
+###INTERVALO DE CONFIANCA
+# Calcular os intervalos de confiança para cada modelo
+# Calcular os intervalos de confiança para cada modelo
+ci_municipio <- confint(mod_TemerBolsonaro_Munic)["(Intercept)", , drop = FALSE]
+ci_imediata <- confint(mod_TemerBolsonaro_Imed)["(Intercept)", , drop = FALSE]
+ci_intermediaria <- confint(mod_TemerBolsonaro_Inter)["(Intercept)", , drop = FALSE]
+ci_estado <- confint(mod_TemerBolsonaro_UF)["(Intercept)", , drop = FALSE]
+
+# Criar um DataFrame para os intervalos de confiança
+ci_data <- data.frame(
+  Localizacao = c("Estado", "Municipio", "Região Imediata", "Região Intermediária"),
+  Lower = c(ci_estado[1], ci_municipio[1], ci_imediata[1], ci_intermediaria[1]),
+  Upper = c(ci_estado[2], ci_municipio[2], ci_imediata[2], ci_intermediaria[2])
+)
+
+# Visualizar em um gráfico de erro
+ggplot(ci_data, aes(x = Localizacao, ymin = Lower, ymax = Upper, color = Localizacao)) +
+  geom_errorbar(width = 0.2) +
+  geom_point(aes(y = (Lower + Upper) / 2), size = 3) +
+  labs(title = "Intervalos de Confiança das Variâncias por Nível de Localização",
+       x = "Nível de Localização",
+       y = "Intervalo de Confiança") +
+  theme_minimal()
+
+###
+
+```
+
+```{r}
+# Função para extrair variâncias e calcular a PVE de um modelo
+extrair_pve <- function(model) {
+  var_comp <- as.data.frame(VarCorr(model))$vcov
+  var_efeito <- var_comp[1]  # Variância do efeito aleatório (1ª linha)
+  var_residual <- attr(VarCorr(model), "sc")^2  # Variância residual
+  
+  # Calcular a PVE
+  pve <- var_efeito / (var_efeito + var_residual)
+  return(pve)
+}
+
+# Extrair as PVEs para cada combinação de modelo e janela temporal
+
+# Modelos de Temer-Bolsonaro
+pve_TB_Munic <- extrair_pve(mod_TemerBolsonaro_Munic)
+pve_TB_UF <- extrair_pve(mod_TemerBolsonaro_UF)
+pve_TB_Inter <- extrair_pve(mod_TemerBolsonaro_Inter)
+pve_TB_Imed <- extrair_pve(mod_TemerBolsonaro_Imed)
+
+# Modelos de Dilma12
+pve_D12_Munic <- extrair_pve(mod_Dilma12_Munic)
+pve_D12_UF <- extrair_pve(mod_Dilma12_UF)
+pve_D12_Inter <- extrair_pve(mod_Dilma12_Inter)
+pve_D12_Imed <- extrair_pve(mod_Dilma12_Imed)
+
+# Modelos de Lula12
+pve_L12_Munic <- extrair_pve(mod_Lula12_Munic)
+pve_L12_UF <- extrair_pve(mod_Lula12_UF)
+pve_L12_Inter <- extrair_pve(mod_Lula12_Inter)
+pve_L12_Imed <- extrair_pve(mod_Lula12_Imed)
+
+# Modelos de FHC12
+pve_FHC12_Munic <- extrair_pve(mod_FHC12_Munic)
+pve_FHC12_UF <- extrair_pve(mod_FHC12_UF)
+pve_FHC12_Inter <- extrair_pve(mod_FHC12_Inter)
+pve_FHC12_Imed <- extrair_pve(mod_FHC12_Imed)
+
+# Criar um data frame com todos os resultados das PVEs
+pve_data <- data.frame(
+  Janela = rep(c("FHC12", "Lula12", "Dilma12", "Temer-Bolsonaro"), each = 4),
+  Localizacao = rep(c("Municipio", "Estado", "Região Intermediária", "Região Imediata"), times = 4),
+  PVE = c(
+    pve_FHC12_Munic, pve_FHC12_UF, pve_FHC12_Inter, pve_FHC12_Imed,
+    pve_L12_Munic, pve_L12_UF, pve_L12_Inter, pve_L12_Imed,
+    pve_D12_Munic, pve_D12_UF, pve_D12_Inter, pve_D12_Imed,
+    pve_TB_Munic, pve_TB_UF, pve_TB_Inter, pve_TB_Imed
+  )
+)
+
+# Visualizar o data frame de PVEs
+print(pve_data)
+
+# Criar um gráfico de barras para comparar as PVEs por janela temporal e nível de localização
+ggplot(pve_data, aes(x = Localizacao, y = PVE, fill = Janela)) +
+  geom_bar(stat = "identity", position = "dodge") +
+  geom_text(aes(label = round(PVE, 3)), 
+            position = position_dodge(0.9), 
+            vjust = -0.3, 
+            size = 3) +
+  labs(title = "Proporção da Variância Explicada (PVE) por Nível de Localização e Janela Temporal",
+       x = "Nível de Localização",
+       y = "Proporção da Variância Explicada (PVE)",
+       fill = "Janela Temporal") +
+  theme_minimal()
+
+```
+

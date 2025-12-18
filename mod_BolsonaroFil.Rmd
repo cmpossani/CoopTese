@@ -1,0 +1,2931 @@
+---
+title: "Decomposição de Desempenho das Cooperativas de Crédito Brasileiras - Análise de Regressões Multinível"
+subtitle: "Janelas temporais estão baseadas nos períodos de governo"
+author: "Cleverton Marlon Possani"
+date: "`r Sys.Date()`"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+# Carregando pacotes necessários
+library(lme4)
+library(ggplot2)
+library(dplyr)
+library(tidyr)
+library(gridExtra)  # Para organizar os gráficos lado a lado
+
+```
+
+# **Introdução**
+
+
+## **Justificativa das *Janelas Temporais**
+A escolha das janelas temporais baseadas nos períodos presidenciais foi feita para capturar as mudanças políticas, econômicas e sociais que ocorreram durante cada mandato, uma vez que essas mudanças podem ter impactos significativos no desempenho das cooperativas de crédito no Brasil. Cada presidência trouxe diferentes políticas econômicas, reformas e crises, o que justifica a divisão por mandatos presidenciais.
+
+
+
+**1995–1998: Fernando Henrique Cardoso (1º Mandato:**
+O primeiro mandato de Fernando Henrique Cardoso foi marcado pela consolidação do Plano Real, que trouxe a estabilização econômica e a redução da hiperinflação. As reformas econômicas e a estabilização da moeda tiveram um impacto profundo no setor financeiro, incluindo as cooperativas de crédito, que passaram a operar em um ambiente econômico mais estável, porém desafiado pela necessidade de adaptação ao novo contexto de controle da inflação e juros elevados.
+
+**1999–2002: Fernando Henrique Cardoso (2º Mandato:**
+No segundo mandato de FHC, o Brasil enfrentou crises econômicas internacionais, como a crise russa (1998) e a crise asiática (1997). A política de câmbio fixo foi abandonada em 1999, o que trouxe impactos ao sistema financeiro e uma flutuação no ambiente econômico. As cooperativas de crédito, neste período, precisaram lidar com taxas de juros voláteis, ajustes fiscais e incertezas econômicas. As reformas estruturais, como a privatização de empresas estatais, também contribuíram para mudanças significativas no cenário econômico.
+
+**2003–2006: Luiz Inácio Lula da Silva (1º Mandato):**
+O primeiro mandato de Luiz Inácio Lula da Silva foi caracterizado por um forte compromisso com a responsabilidade fiscal e a continuidade das políticas econômicas iniciadas por FHC. No entanto, houve uma maior ênfase em programas sociais e em políticas de crédito e financiamento voltadas para setores mais pobres. O crescimento econômico, impulsionado pelo aumento das exportações e a melhoria dos preços das commodities, beneficiou as cooperativas de crédito, que viram o aumento da inclusão financeira e o fortalecimento do crédito rural.
+
+**2007–2010: Luiz Inácio Lula da Silva (2º Mandato):**
+Durante o segundo mandato de Lula, o Brasil enfrentou a crise financeira global de 2008. O governo adotou políticas anticíclicas, como a expansão do crédito, redução de impostos e programas de estímulo ao consumo interno. As cooperativas de crédito desempenharam um papel crucial na manutenção do crédito em áreas rurais e menos favorecidas, se beneficiando do cenário de recuperação econômica pós-crise e da expansão do crédito promovida pelo governo.
+
+**2011–2014: Dilma Rousseff (1º Mandato):**
+O primeiro mandato de Dilma Rousseff foi marcado por uma série de intervenções governamentais na economia, como a redução forçada das taxas de juros pelos bancos públicos e a tentativa de controlar a inflação via medidas de controle de preços (como no setor energético). Embora o Brasil tenha mantido um crescimento modesto nos primeiros anos, a economia começou a desacelerar em 2013 e 2014, com o aumento da inflação e das taxas de juros. As cooperativas de crédito enfrentaram dificuldades em um cenário de crescimento econômico cada vez mais baixo.
+
+**2015–2016: Dilma Rousseff (2º Mandato):**
+O segundo mandato de Dilma Rousseff foi marcado pela pior recessão econômica em décadas, agravada pela crise política e econômica que culminou no processo de impeachment. As cooperativas de crédito, assim como outras instituições financeiras, enfrentaram um ambiente econômico altamente adverso, com aumento da inadimplência e queda na demanda por crédito. O período foi curto (apenas dois anos), mas crucial, pois refletiu o impacto das políticas governamentais no setor financeiro.
+
+**2016–2018: Michel Temer:**
+Durante o governo de Michel Temer, o Brasil passou por reformas importantes, como a reforma trabalhista e o controle dos gastos públicos com a PEC do teto de gastos. O governo implementou políticas para restaurar a confiança do mercado, focando na estabilização econômica e no controle da inflação. Embora tenha sido um período de transição, com um mandato relativamente curto, o impacto dessas reformas e do ajuste fiscal no sistema financeiro foi significativo, afetando as cooperativas de crédito que operavam em um ambiente econômico mais controlado e com juros mais baixos.
+
+**2019–2022: Jair Bolsonaro:**
+O mandato de Jair Bolsonaro foi caracterizado por uma série de reformas econômicas, como a reforma da Previdência, e um forte impulso na agenda de privatizações e desregulamentação do mercado. Durante o período da pandemia de COVID-19, o governo implementou medidas emergenciais de apoio financeiro, como o auxílio emergencial, e houve uma expansão do crédito para empresas e famílias. As cooperativas de crédito desempenharam um papel importante em fornecer suporte às pequenas empresas e ao agronegócio durante esse período desafiador, mas também precisaram se adaptar ao novo cenário de incerteza global.
+
+---
+
+# **Resumo estatístico das Janelas Temporais:**
+```{r, estatisticas_janelas, echo=FALSE}
+# Exibir a tabela de estatísticas no relatório
+estatisticas_totais
+
+```
+
+-
+```{r, estatisticas1_janelas_graficas, echo=FALSE}
+
+# Gráfico de barras comparando a média por janela temporal
+ggplot(estatisticas_totais, aes(x = Janela, y = Media, fill = Janela)) +
+  geom_bar(stat = "identity") +
+  labs(title = "Comparação da Média de SOBRAS_POR_ATIVO por Janela Temporal",
+       x = "Janela Temporal", y = "Média de SOBRAS_POR_ATIVO") +
+  theme_minimal()
+
+```
+
+### Análise:
+
+> O gráfico revela variações significativas no desempenho das cooperativas de crédito ao longo dos diferentes mandatos presidenciais. 
+
+> Os períodos FHC2 e Lula2 foram marcados por desempenhos mais negativos, enquanto os períodos de Bolsonaro, Dilma2, e Temer apresentam médias de desempenho mais próximas de zero, sugerindo uma recuperação ou estabilidade relativa. Esses resultados podem refletir as políticas econômicas e as condições macroeconômicas que afetaram as cooperativas durante cada mandato. 
+
+---
+
+
+```{r, estatisticas2_janelas_graficas, echo=FALSE}
+# Gráfico de barras comparando a mediana por janela temporal
+ggplot(estatisticas_totais, aes(x = Janela, y = Mediana, fill = Janela)) +
+  geom_bar(stat = "identity") +
+  labs(title = "Comparação da Mediana de SOBRAS_POR_ATIVO por Janela Temporal",
+       x = "Janela Temporal", y = "Mediana de SOBRAS_POR_ATIVO") +
+  theme_minimal()
+
+```
+
+### Análise:
+
+> O gráfico demonstra que o desempenho das cooperativas de crédito, medido pela mediana de SOBRAS_POR_ATIVO, foi mais forte no primeiro mandato de FHC1, com uma queda gradual a partir de FHC2, seguida por estabilidade em níveis mais baixos durante os governos Dilma, Lula2 e Bolsonaro. 
+
+> Esses resultados sugerem que, embora o período de FHC1 tenha sido excepcionalmente favorável, houve uma tendência de redução no desempenho mediano das cooperativas ao longo dos anos, com alguns períodos de recuperação, como observado durante o governo Temer.
+
+---
+
+```{r, estatisticas3_janelas_graficas, echo=FALSE}
+# Gráfico de barras comparando o desvio padrão por janela temporal
+ggplot(estatisticas_totais, aes(x = Janela, y = Desvio_Padrao, fill = Janela)) +
+  geom_bar(stat = "identity") +
+  labs(title = "Comparação do Desvio Padrão de SOBRAS_POR_ATIVO por Janela Temporal",
+       x = "Janela Temporal", y = "Desvio Padrão de SOBRAS_POR_ATIVO") +
+  theme_minimal()
+
+
+```
+
+### Análise:
+
+> FHC1 foi o período com maior variabilidade, sugerindo uma dispersão significativa no desempenho das cooperativas de crédito, com algumas obtendo resultados extremamente bons e outras com resultados muito fracos. 
+
+> Dilma2 e Temer foram os períodos com menor variabilidade, indicando uma maior uniformidade no desempenho das cooperativas de crédito. O desvio padrão intermediário observado nos períodos de Bolsonaro, Dilma1, e Lula indica que, nesses períodos, o desempenho das cooperativas variou moderadamente.
+
+---
+
+### **Comparação das médias de SOBRAS_POR_ATIVO por ano dentro de cada janela temporal**
+```{r, janelasANO, echo=FALSE}
+
+ggplot(estatisticas_totais_ano, aes(x = ANO, y = Media, group = Janela, color = Janela)) +
+  geom_line(size = 1) +
+  geom_point(size = 3) +
+  labs(title = "Comparação da Média de SOBRAS_POR_ATIVO por Ano e Janela Temporal",
+       x = "Ano", y = "Média de SOBRAS_POR_ATIVO") +
+  theme_minimal() +
+  scale_x_continuous(breaks = estatisticas_totais_ano$ANO) +  # Exibir todos os anos no eixo X
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+```
+
+# Análise:
+
+> FHC1 e FHC2 foram períodos de alta volatilidade e desempenho negativo das cooperativas de crédito, com flutuações significativas ano a ano.
+
+> Lula1 e Lula2 indicam uma fase de recuperação, embora o desempenho ainda tenha permanecido instável.
+
+> Dilma1, Dilma2, e Temer mostraram uma clara estabilização, com o desempenho das cooperativas ficando mais uniforme e próximo de zero.
+
+> Bolsonaro continuou essa tendência de estabilidade, com pouca variação no desempenho médio até 2022, quando uma leve queda começa a surgir.
+
+
+```{r, janelasANO1, echo=FALSE}
+# Gráfico de barras agrupadas comparando a mediana de SOBRAS_POR_ATIVO por ano
+ggplot(estatisticas_totais_ano, aes(x = factor(ANO), y = Mediana, fill = Janela)) +
+  geom_bar(stat = "identity", position = "dodge") +
+  labs(title = "Comparação da Mediana de SOBRAS_POR_ATIVO por Ano e Janela Temporal",
+       x = "Ano", y = "Mediana de SOBRAS_POR_ATIVO") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+```
+
+# Análise:
+
+> A mediana de SOBRAS_POR_ATIVO revela uma trajetória de declínio mais gradual e estável ao longo dos mandatos presidenciais, especialmente a partir de Lula1. A queda inicial observada em FHC2 foi seguida de um período de maior estabilidade, com as cooperativas de crédito mantendo um desempenho relativamente constante durante Dilma, Temer, e Bolsonaro, mesmo que em níveis mais baixos do que em FHC1.
+
+> A mediana, ao ser menos influenciada por valores extremos, sugere que a maioria das cooperativas conseguiu manter um desempenho estável nos últimos mandatos, apesar dos desafios econômicos que podem ter afetado algumas instituições de forma mais severa.
+
+```{r, echo=FALSE}
+ggplot(estatisticas_totais, aes(x = Janela)) +
+  geom_point(aes(y = Media, color = "Média"), size = 3) +
+  geom_point(aes(y = Mediana, color = "Mediana"), size = 3) +
+  geom_point(aes(y = Desvio_Padrao, color = "Desvio Padrão"), size = 3) +
+  labs(title = "Comparação das Estatísticas de SOBRAS_POR_ATIVO por Janela Temporal",
+       x = "Janela Temporal", y = "Valores Estatísticos") +
+  theme_minimal() +
+  scale_color_manual(values = c("Média" = "blue", "Mediana" = "green", "Desvio Padrão" = "red"))
+```
+
+# Análise:
+
+> O gráfico revela que o período de maior volatilidade e desafios para as cooperativas foi durante os mandatos de Fernando Henrique Cardoso, especialmente no primeiro mandato. Houve uma melhora relativa na estabilidade e na homogeneidade do desempenho durante os governos de Dilma e Temer. No entanto, mesmo durante esses períodos de estabilidade, o desempenho médio das cooperativas continuou a ser negativo
+
+
+
+## **Resumo estatístico da Janela Bolsonado:**
+```{r descricao_estatistica, echo=FALSE}
+est_munic <- calcular_estatisticas(df_Bolsonado_filteredMunic, "Janela Bolsonaro (Município >= 3)")
+est_imed <- calcular_estatisticas(df_Bolsonado_filteredImed, "Janela Bolsonaro (Reg. Imediata >= 5)")
+est_inter <- calcular_estatisticas(df_Bolsonado_filteredIntermed, "Janela Bolsonaro (Reg. Intermediária >= 5)")
+est_UF <- calcular_estatisticas(df_Bolsonado_filteredUF, "Janela Bolsonaro (Estado >= 5)")
+
+est_munic
+est_imed
+est_inter
+est_UF
+
+```
+
+### *Outliers identificados nas Janelas referente as Regiões Intermediária e Estadual:*
+
+```{r outlier, echo=FALSE}
+
+df_Bolsonado_filteredIntermedLimpo <- remover_outliers_zscore(df_Bolsonado_filteredIntermed, "SOBRAS_POR_ATIVO")
+
+df_sem_outliers_ZscoreBoso_Inter <- df_Bolsonado_filteredIntermedLimpo$df_sem_outliers
+df_com_outliers_ZscoreBoso_Inter <- df_Bolsonado_filteredIntermedLimpo$df_com_outliers
+
+library(knitr)
+library(kableExtra)
+
+# Exibir a tibble formatada com kable
+df_com_outliers_ZscoreBoso_Inter %>%
+  kable() %>%
+  kable_styling(full_width = FALSE)
+
+novo <- calcular_estatisticas(df_sem_outliers_ZscoreBoso_Inter, "Janela Bolsonaro (Z-score Reg. Intermediárias)")
+novo
+
+df_Bolsonado_filteredEstadoLimpo <- remover_outliers_zscore(df_Bolsonado_filteredUF, "SOBRAS_POR_ATIVO")
+
+df_sem_outliers_ZscoreBoso_Estado <- df_Bolsonado_filteredEstadoLimpo$df_sem_outliers
+df_com_outliers_ZscoreBoso_Estado <- df_Bolsonado_filteredEstadoLimpo$df_com_outliers
+
+
+
+# Exibir a tibble formatada com kable
+df_com_outliers_ZscoreBoso_Estado %>%
+  kable() %>%
+  kable_styling(full_width = FALSE)
+
+novo <- calcular_estatisticas(df_sem_outliers_ZscoreBoso_Estado, "Janela Bolsonaro (Z-score Estadual)")
+novo
+
+```
+
+## Boxplot das Janelas Bolsonaro (Regiões Intermediária e Estadual)
+```{r, echo=FALSE}
+
+# Criando os dois boxplots
+p1 <- ggplot(df_Bolsonado_filteredIntermed, aes(y = SOBRAS_POR_ATIVO)) + 
+  geom_boxplot() + 
+  ggtitle("Com Outliers")
+
+p2 <- ggplot(df_sem_outliers_ZscoreBoso_Inter, aes(y = SOBRAS_POR_ATIVO)) + 
+  geom_boxplot() + 
+  ggtitle("Sem Outliers")
+
+# Exibindo os gráficos lado a lado
+grid.arrange(p1, p2, ncol = 2)
+
+
+# Criando os dois boxplots
+p1 <- ggplot(df_Bolsonado_filteredUF, aes(y = SOBRAS_POR_ATIVO)) + 
+  geom_boxplot() + 
+  ggtitle("Com Outliers")
+
+p2 <- ggplot(df_sem_outliers_ZscoreBoso_Estado, aes(y = SOBRAS_POR_ATIVO)) + 
+  geom_boxplot() + 
+  ggtitle("Sem Outliers")
+
+# Exibindo os gráficos lado a lado
+grid.arrange(p1, p2, ncol = 2)
+
+```
+
+
+```{r, echo=FALSE, message=FALSE, warning=FALSE, fig.width=10, fig.height=8}
+# Carregar a biblioteca necessária
+library(ggplot2)
+library(gridExtra)
+
+# Gráfico 1: Contagem por Localização Município
+# p1 <- ggplot(df_Bolsonado_filteredMunic %>% filter(Ano == 2022), aes(x = factor(Localizacao_munic))) +
+#   geom_bar() +
+#   geom_text(stat = 'count', aes(label = ..count..), vjust = -0.5) + 
+#   labs(title = "Contagem por Localização Município", x = "Município", y = "Contagem") +
+#   theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+#   theme_minimal()
+
+# p1 <- ggplot(df_Bolsonado_filteredMunic %>% filter(Ano == 2022), 
+#              aes(x = factor(Localizacao_munic))) +
+#   geom_bar() +
+#   geom_text(stat = 'count', aes(label = ..count..), vjust = -0.5) +  # Aumenta o valor de vjust para posicionar melhor os números
+#   labs(title = "Contagem por Localização Município (Ano: 2022)", x = "Município", y = "Contagem") +
+#   theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+#   theme_minimal()
+# 
+# 
+# # Gráfico 2: Contagem por Estado (UF)
+# p2 <- ggplot(df_Bolsonado_filteredImed %>% filter(Ano == 2022), aes(x = factor(Localizacao_Imed))) +
+#   geom_bar() +
+#   geom_text(stat = 'count', aes(label = ..count..), vjust = -0.5) + 
+#   labs(title = "Contagem por Estado (UF)", x = "Estado (UF)", y = "Contagem") +
+#   theme_minimal()
+# 
+# # Gráfico 3: Contagem por Localização Imediata
+# p3 <- ggplot(df_Bolsonado_filteredIntermed %>% filter(Ano == 2022), aes(x = factor(Localizacao_Inter))) +
+#   geom_bar() +
+#   geom_text(stat = 'count', aes(label = ..count..), vjust = -0.5) + 
+#   labs(title = "Contagem por Localização Imediata", x = "Localização Imediata", y = "Contagem") +
+#   theme_minimal()
+# 
+# 
+# # Gráfico 4: Contagem por Localização Intermediária
+# p4 <- ggplot(df_Bolsonado_filteredUF %>% filter(Ano == 2022), aes(x = factor(Localizacao_UF))) +
+#   geom_bar() +
+#   geom_text(stat = 'count', aes(label = ..count..), vjust = -0.5) + 
+#   labs(title = "Contagem por Localização Intermediária", x = "Localização Intermediária", y = "Contagem") +
+#   theme_minimal()
+# 
+# 
+# # Organizar os gráficos em uma tabela 2x2
+# grid.arrange(p1, p2, p3, p4, ncol = 2)
+# 
+
+# Filtrar os dados para o ano de 2022
+df_filtered <- df_Bolsonado_filteredMunic %>% filter(Ano == 2022)
+
+# Criar uma tabela de frequências para a quantidade de ocorrências por município
+freq_table <- df_filtered %>%
+  count(Localizacao_munic) %>%  # Conta quantas vezes cada município aparece
+  count(n)  # Conta quantas vezes cada contagem de município aparece
+
+# Gráfico de barras mostrando a quantidade de vezes que cada contagem de município ocorre
+p <- ggplot(freq_table, aes(x = factor(n), y = nn)) + 
+  geom_bar(stat = "identity") +
+  geom_text(aes(label = nn), vjust = -0.5) +  # Adiciona os números em cima das barras
+  labs(title = "Distribuição de Contagens por Município (Janela Bolsonaro)",
+       x = "Quantidade de Municípios",
+       y = "Frequência") +
+  theme_minimal()
+
+# Exibir o gráfico
+
+# Filtrar os dados para o ano de 2022
+df_filtered_imed <- df_Bolsonado_filteredImed %>% filter(Ano == 2022)
+
+# Criar uma tabela de frequências para a quantidade de ocorrências por Região Imediata
+freq_table_imed <- df_filtered_imed %>%
+  count(Cod_Reg_Imediata) %>%  # Conta quantas vezes cada Região Imediata aparece
+  count(n)  # Conta quantas vezes cada contagem de Região Imediata aparece
+
+# Gráfico de barras mostrando a quantidade de vezes que cada contagem de Região Imediata ocorre
+p_imed <- ggplot(freq_table_imed, aes(x = factor(n), y = nn)) + 
+  geom_bar(stat = "identity") +
+  geom_text(aes(label = nn), vjust = -0.5) +  # Adiciona os números em cima das barras
+  labs(title = "Distribuição de Contagens por Reg. Imediata (Janela Bolsonaro)",
+       x = "Quantidade de Regiões Imediatas",
+       y = "Frequência") +
+  theme_minimal()
+
+# Exibir o gráfico
+
+# Filtrar os dados para o ano de 2022
+df_filtered_intermed <- df_Bolsonado_filteredIntermedLimpo$df_sem_outliers %>% filter(Ano == 2022)
+
+# Criar uma tabela de frequências para a quantidade de ocorrências por Região Intermediária
+freq_table_intermed <- df_filtered_intermed %>%
+  count(Cod_Reg_Intermed) %>%  # Conta quantas vezes cada Região Intermediária aparece
+  count(n)  # Conta quantas vezes cada contagem de Região Intermediária aparece
+
+# Gráfico de barras mostrando a quantidade de vezes que cada contagem de Região Intermediária ocorre
+p_intermed <- ggplot(freq_table_intermed, aes(x = factor(n), y = nn)) + 
+  geom_bar(stat = "identity") +
+  geom_text(aes(label = nn), vjust = -0.5) +  # Adiciona os números em cima das barras
+  labs(title = "Distribuição de Contagens por Reg. Inter. (Janela Bolsonaro)",
+       x = "Quantidade de Regiões Intermediárias",
+       y = "Frequência") +
+  theme_minimal()
+
+
+# Gráfico 4: Contagem por Localização Intermediária
+p4 <- ggplot(df_Bolsonado_filteredEstadoLimpo$df_sem_outliers %>% filter(Ano == 2022), aes(x = factor(Localizacao_UF))) +
+  geom_bar() +
+  geom_text(stat = 'count', aes(label = ..count..), vjust = -0.5) +
+  labs(title = "Contagem por Localização Intermediária", x = "Localização Intermediária", y = "Contagem") +
+  theme_minimal()
+
+
+grid.arrange(p, p_imed, p_intermed, p4, ncol = 2)
+
+```
+
+---
+
+### Rodando a regressão usando **Modelos Lineares Mistos** com 3 níveis (1 - Ano; 2 - Unidade de Negócio; 3 - Localização. 
+
+##Estão sendo utilizadas as seguintes variáveis de localização: **Estado, Região Intermediária, Região Imediata e Município**. 
+
+```{r}
+
+mod_Bolsonaro_Munic <- lmer(SOBRAS_POR_ATIVO ~ Ano + (1 | Unidade_de_Negocio) + (1 | Localizacao_munic), data = df_Bolsonado_filteredMunic)
+summary(mod_Bolsonaro_Munic)
+
+mod_Bolsonaro_UF <- lmer(SOBRAS_POR_ATIVO ~ Ano + (1 | Unidade_de_Negocio) + (1 | Localizacao_UF) , data = df_sem_outliers_ZscoreBoso_Estado)
+summary(mod_Bolsonaro_UF)
+
+mod_Bolsonaro_Inter <- lmer(SOBRAS_POR_ATIVO ~ Ano + (1 | Unidade_de_Negocio) + (1 | Localizacao_Inter), data = df_sem_outliers_ZscoreBoso_Inter)
+summary(mod_Bolsonaro_Inter)
+
+mod_Bolsonaro_Imed <- lmer(SOBRAS_POR_ATIVO ~ Ano + (1 | Unidade_de_Negocio) + (1 | Localizacao_Imed), data = df_Bolsonado_filteredImed)
+summary(mod_Bolsonaro_Imed)
+
+
+
+```
+
+```{r, echo=FALSE}
+# Gerar gráficos de pizza para cada modelo
+plot_Munic <- plot_pizza_2D(mod_Bolsonaro_Munic)
+plot_Imed <- plot_pizza_2D(mod_Bolsonaro_Imed)
+plot_Inter <- plot_pizza_2D(mod_Bolsonaro_Inter)
+plot_UF <- plot_pizza_2D(mod_Bolsonaro_UF)
+
+
+# Ajustar espaçamento para melhor utilização da área da tela
+grid.arrange(
+  plot_Munic,  plot_Imed, plot_Inter, plot_UF,
+  ncol = 2,
+  widths = c(1, 1),
+  heights = c(1, 1),
+  top = "Comparação dos Modelos da Janela Bolsonaro (2019 - 2022)"
+)
+
+```
+
+
+## **Componentes de variância lado a lado para análise quantitativa entre os modelos**.
+```{r, echo=FALSE}
+# Executar a comparação com os 4 modelos
+models <- list(mod_Bolsonaro_Munic, mod_Bolsonaro_Imed, mod_Bolsonaro_Inter ,mod_Bolsonaro_UF )
+names <- c("Bolsonaro Munic", "Bolsonaro Imed", "Bolsonaro Inter", "Bolsonaro UF")
+
+comparison_table <- compare_variances(models, names)
+comparison_table
+```
+
+
+## **Comparando AIC e BIC para os modelos**
+```{r, echo=FALSE}
+
+model_comparison <- data.frame(
+  Model = c("Bolsonaro UF", "Bolsonaro Inter", "Bolsonaro Imed", "Bolsonaro Munic"),
+  AIC = c(AIC(mod_Bolsonaro_UF), AIC(mod_Bolsonaro_Inter), AIC(mod_Bolsonaro_Imed), AIC(mod_Bolsonaro_Munic)),
+  BIC = c(BIC(mod_Bolsonaro_UF), BIC(mod_Bolsonaro_Inter), BIC(mod_Bolsonaro_Imed), BIC(mod_Bolsonaro_Munic))
+)
+model_comparison
+
+```
+## **Resultado da Decomposição de Variância do Desempenho da janela temporal Gov. Bolsonaro (2019 - 2022)**
+
+---
+
+## **Resumo estatístico da Janela Temer:**
+```{r descricao_estatisticaTemer, echo=FALSE}
+est_munic <- calcular_estatisticas(df_Temer_filteredMunic, "Janela Temer (Município >= 3)")
+est_imed <- calcular_estatisticas(df_Temer_filteredImed, "Janela Temer (Reg. Imediata >= 5)")
+est_inter <- calcular_estatisticas(df_Temer_filteredIntermed, "Janela Temer (Reg. Intermediária >= 5)")
+est_UF <- calcular_estatisticas(df_Temer_filteredUF, "Janela Temer (Estado >= 5)")
+
+est_munic
+est_imed
+est_inter
+est_UF
+
+```
+
+### *Outliers identificados nas Janelas referente as Regiões Intermediária e Estadual:*
+
+```{r outlierTemer, echo=FALSE}
+
+df_Temer_filteredMunicLimpo <- remover_outliers_zscore(df_Temer_filteredMunic, "SOBRAS_POR_ATIVO")
+
+df_sem_outliers_ZscoreTemer_Munic <- df_Temer_filteredMunicLimpo$df_sem_outliers
+df_com_outliers_ZscoreTemer_Munic <- df_Temer_filteredMunicLimpo$df_com_outliers
+
+# library(knitr)
+# library(kableExtra)
+
+# Exibir a tibble formatada com kable
+df_com_outliers_ZscoreTemer_Munic %>%
+  kable() %>%
+  kable_styling(full_width = FALSE)
+
+
+novo <- calcular_estatisticas(df_sem_outliers_ZscoreTemer_Munic, "Janela Temer (Z-score Município)")
+novo
+
+
+
+df_Temer_filteredImedLimpo <- remover_outliers_zscore(df_Temer_filteredImed, "SOBRAS_POR_ATIVO")
+
+df_sem_outliers_ZscoreTemer_Imed <- df_Temer_filteredImedLimpo$df_sem_outliers
+df_com_outliers_ZscoreTemer_Imed <- df_Temer_filteredImedLimpo$df_com_outliers
+
+df_com_outliers_ZscoreTemer_Imed %>%
+  kable() %>%
+  kable_styling(full_width = FALSE)
+
+
+novo <- calcular_estatisticas(df_sem_outliers_ZscoreTemer_Imed, "Janela Temer (Z-score Imediata)")
+novo
+
+
+df_Temer_filteredInterLimpo <- remover_outliers_zscore(df_Temer_filteredIntermed, "SOBRAS_POR_ATIVO", threshold = 5)
+
+df_sem_outliers_ZscoreTemer_Inter <- df_Temer_filteredInterLimpo$df_sem_outliers
+df_com_outliers_ZscoreTemer_Inter <- df_Temer_filteredInterLimpo$df_com_outliers
+
+df_com_outliers_ZscoreTemer_Inter %>%
+  kable() %>%
+  kable_styling(full_width = FALSE)
+
+
+novo <- calcular_estatisticas(df_sem_outliers_ZscoreTemer_Inter, "Janela Temer (Z-score Inter)")
+novo
+
+
+df_Temer_filteredUFLimpo <- remover_outliers_zscore(df_Temer_filteredUF, "SOBRAS_POR_ATIVO")
+
+df_sem_outliers_ZscoreTemer_UF <- df_Temer_filteredUFLimpo$df_sem_outliers
+df_com_outliers_ZscoreTemer_UF <- df_Temer_filteredUFLimpo$df_com_outliers
+
+df_com_outliers_ZscoreTemer_UF %>%
+  kable() %>%
+  kable_styling(full_width = FALSE)
+
+
+novo <- calcular_estatisticas(df_sem_outliers_ZscoreTemer_UF, "Janela Temer (Z-score Estado)")
+novo
+
+
+
+```
+
+## Boxplot das Janelas Temer 
+```{r, echo=FALSE}
+
+# Criando os dois boxplots
+p1 <- ggplot(df_Temer_filteredMunic, aes(y = SOBRAS_POR_ATIVO)) + 
+  geom_boxplot() + 
+  ggtitle("Todos dados da Janela Temer - Municípios ")+
+  theme(plot.title = element_text(hjust = 0.5))
+
+p2 <- ggplot(df_Temer_filteredMunicLimpo$df_sem_outliers, aes(y = SOBRAS_POR_ATIVO)) + 
+  geom_boxplot() + 
+  ggtitle("Janela Temer - Municípios \nsem outliers a 3 desvios padrão") +
+  theme(plot.title = element_text(hjust = 0.5))
+
+# Exibindo os gráficos lado a lado
+grid.arrange(p1, p2, ncol = 2)
+
+
+# Criando os dois boxplots
+p1 <- ggplot(df_Temer_filteredImed, aes(y = SOBRAS_POR_ATIVO)) + 
+  geom_boxplot() + 
+  ggtitle("Todos as dados da Janela Temer \nRegião Imediata ")+
+  theme(plot.title = element_text(hjust = 0.5))
+
+p2 <- ggplot(df_Temer_filteredImedLimpo$df_sem_outliers, aes(y = SOBRAS_POR_ATIVO)) + 
+  geom_boxplot() + 
+  ggtitle("Janela Temer - Reg. Imediata \nsem Outliers a 3 desvios padrão")+
+  theme(plot.title = element_text(hjust = 0.5))
+
+# Exibindo os gráficos lado a lado
+grid.arrange(p1, p2, ncol = 2)
+
+
+# Criando os dois boxplots
+p1 <- ggplot(df_Temer_filteredIntermed, aes(y = SOBRAS_POR_ATIVO)) + 
+  geom_boxplot() + 
+  ggtitle("Todos as dados da Janela Temer \nRegião Intermediária")+
+  theme(plot.title = element_text(hjust = 0.5))
+
+p2 <- ggplot(df_Temer_filteredInterLimpo$df_sem_outliers, aes(y = SOBRAS_POR_ATIVO)) + 
+  geom_boxplot() + 
+  ggtitle("Reg. Int. da Janela Temer \nsem Outliers a 5 desvios padrão")+
+  theme(plot.title = element_text(hjust = 0.5))
+
+# Exibindo os gráficos lado a lado
+grid.arrange(p1, p2, ncol = 2)
+
+
+# Criando os dois boxplots
+p1 <- ggplot(df_Temer_filteredUF, aes(y = SOBRAS_POR_ATIVO)) + 
+  geom_boxplot() + 
+  ggtitle("Todos as dados da Janela Temer \nEstado")+
+  theme(plot.title = element_text(hjust = 0.5))
+
+p2 <- ggplot(df_Temer_filteredUFLimpo$df_sem_outliers, aes(y = SOBRAS_POR_ATIVO)) + 
+  geom_boxplot() + 
+  ggtitle("Estados da Janela Temer\nsem Outliers a 3 desvios padrão")+
+  theme(plot.title = element_text(hjust = 0.5))
+
+# Exibindo os gráficos lado a lado
+grid.arrange(p1, p2, ncol = 2)
+
+
+```
+
+
+```{r, echo=FALSE, message=FALSE, warning=FALSE, fig.width=10, fig.height=8}
+# Carregar a biblioteca necessária
+library(ggplot2)
+library(gridExtra)
+
+# Gráfico 1: Contagem por Localização Município
+# p1 <- ggplot(df_Bolsonado_filteredMunic %>% filter(Ano == 2022), aes(x = factor(Localizacao_munic))) +
+#   geom_bar() +
+#   geom_text(stat = 'count', aes(label = ..count..), vjust = -0.5) + 
+#   labs(title = "Contagem por Localização Município", x = "Município", y = "Contagem") +
+#   theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+#   theme_minimal()
+
+# p1 <- ggplot(df_Bolsonado_filteredMunic %>% filter(Ano == 2022), 
+#              aes(x = factor(Localizacao_munic))) +
+#   geom_bar() +
+#   geom_text(stat = 'count', aes(label = ..count..), vjust = -0.5) +  # Aumenta o valor de vjust para posicionar melhor os números
+#   labs(title = "Contagem por Localização Município (Ano: 2022)", x = "Município", y = "Contagem") +
+#   theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+#   theme_minimal()
+# 
+# 
+# # Gráfico 2: Contagem por Estado (UF)
+# p2 <- ggplot(df_Bolsonado_filteredImed %>% filter(Ano == 2022), aes(x = factor(Localizacao_Imed))) +
+#   geom_bar() +
+#   geom_text(stat = 'count', aes(label = ..count..), vjust = -0.5) + 
+#   labs(title = "Contagem por Estado (UF)", x = "Estado (UF)", y = "Contagem") +
+#   theme_minimal()
+# 
+# # Gráfico 3: Contagem por Localização Imediata
+# p3 <- ggplot(df_Bolsonado_filteredIntermed %>% filter(Ano == 2022), aes(x = factor(Localizacao_Inter))) +
+#   geom_bar() +
+#   geom_text(stat = 'count', aes(label = ..count..), vjust = -0.5) + 
+#   labs(title = "Contagem por Localização Imediata", x = "Localização Imediata", y = "Contagem") +
+#   theme_minimal()
+# 
+# 
+# # Gráfico 4: Contagem por Localização Intermediária
+# p4 <- ggplot(df_Bolsonado_filteredUF %>% filter(Ano == 2022), aes(x = factor(Localizacao_UF))) +
+#   geom_bar() +
+#   geom_text(stat = 'count', aes(label = ..count..), vjust = -0.5) + 
+#   labs(title = "Contagem por Localização Intermediária", x = "Localização Intermediária", y = "Contagem") +
+#   theme_minimal()
+# 
+# 
+# # Organizar os gráficos em uma tabela 2x2
+# grid.arrange(p1, p2, p3, p4, ncol = 2)
+# 
+
+# Filtrar os dados para o ano de 2022
+df_filtered <- df_Temer_filteredMunic %>% filter(Ano == 2018)
+
+# Criar uma tabela de frequências para a quantidade de ocorrências por município
+freq_table <- df_filtered %>%
+  count(Localizacao_munic) %>%  # Conta quantas vezes cada município aparece
+  count(n)  # Conta quantas vezes cada contagem de município aparece
+
+# Gráfico de barras mostrando a quantidade de vezes que cada contagem de município ocorre
+p <- ggplot(freq_table, aes(x = factor(n), y = nn)) + 
+  geom_bar(stat = "identity") +
+  geom_text(aes(label = nn), vjust = -0.5) +  # Adiciona os números em cima das barras
+  labs(title = "Distribuição de Contagens por Município (Janela Temer)",
+       x = "Quantidade de Municípios",
+       y = "Frequência") +
+  theme_minimal()
+
+# Exibir o gráfico
+
+# Filtrar os dados para o ano de 2022
+df_filtered_imed <- df_Temer_filteredImed %>% filter(Ano == 2018)
+
+# Criar uma tabela de frequências para a quantidade de ocorrências por Região Imediata
+freq_table_imed <- df_filtered_imed %>%
+  count(Cod_Reg_Imediata) %>%  # Conta quantas vezes cada Região Imediata aparece
+  count(n)  # Conta quantas vezes cada contagem de Região Imediata aparece
+
+# Gráfico de barras mostrando a quantidade de vezes que cada contagem de Região Imediata ocorre
+p_imed <- ggplot(freq_table_imed, aes(x = factor(n), y = nn)) + 
+  geom_bar(stat = "identity") +
+  geom_text(aes(label = nn), vjust = -0.5) +  # Adiciona os números em cima das barras
+  labs(title = "Distribuição de Contagens por Reg. Imediata (Janela Temer)",
+       x = "Quantidade de Regiões Imediatas",
+       y = "Frequência") +
+  theme_minimal()
+
+# Exibir o gráfico
+
+# Filtrar os dados para o ano de 2022
+df_filtered_intermed <- df_Temer_filteredInterLimpo$df_sem_outliers %>% filter(Ano == 2018)
+
+# Criar uma tabela de frequências para a quantidade de ocorrências por Região Intermediária
+freq_table_intermed <- df_filtered_intermed %>%
+  count(Cod_Reg_Intermed) %>%  # Conta quantas vezes cada Região Intermediária aparece
+  count(n)  # Conta quantas vezes cada contagem de Região Intermediária aparece
+
+# Gráfico de barras mostrando a quantidade de vezes que cada contagem de Região Intermediária ocorre
+p_intermed <- ggplot(freq_table_intermed, aes(x = factor(n), y = nn)) + 
+  geom_bar(stat = "identity") +
+  geom_text(aes(label = nn), vjust = -0.5) +  # Adiciona os números em cima das barras
+  labs(title = "Distribuição de Contagens por Reg. Inter. (Janela Temer)",
+       x = "Quantidade de Regiões Intermediárias",
+       y = "Frequência") +
+  theme_minimal()
+
+
+# Gráfico 4: Contagem por Localização Intermediária
+p4 <- ggplot(df_Temer_filteredUF %>% filter(Ano == 2018), aes(x = factor(Localizacao_UF))) +
+  geom_bar() +
+  geom_text(stat = 'count', aes(label = ..count..), vjust = -0.5) +
+  labs(title = "Contagem por Localização Estadual", x = "Localização Estaual", y = "Contagem") +
+  theme_minimal()
+
+
+grid.arrange(p, p_imed, p_intermed, p4, ncol = 2)
+
+```
+
+---
+
+### Rodando a regressão usando **Modelos Lineares Mistos** com 3 níveis (1 - Ano; 2 - Unidade de Negócio; 3 - Localização. 
+
+##Estão sendo utilizadas as seguintes variáveis de localização: **Estado, Região Intermediária, Região Imediata e Município**. 
+
+```{r, semRemoverOutlierTemer}
+
+mod_Temer_Munic <- lmer(SOBRAS_POR_ATIVO ~ Ano + (1 | Unidade_de_Negocio) + (1 | Localizacao_munic), data = df_Temer_filteredMunic)
+summary(mod_Temer_Munic)
+
+mod_Temer_UF <- lmer(SOBRAS_POR_ATIVO ~ Ano + (1 | Unidade_de_Negocio) + (1 | Localizacao_UF) , data = df_Temer_filteredUF)
+summary(mod_Temer_UF)
+
+mod_Temer_Inter <- lmer(SOBRAS_POR_ATIVO ~ Ano + (1 | Unidade_de_Negocio) + (1 | Localizacao_Inter), data = df_Temer_filteredInterLimpo$df_sem_outliers)
+summary(mod_Temer_Inter)
+
+mod_Temer_Imed <- lmer(SOBRAS_POR_ATIVO ~ Ano + (1 | Unidade_de_Negocio) + (1 | Localizacao_Imed), data = df_Temer_filteredImed)
+summary(mod_Temer_Imed)
+
+
+
+```
+
+# Base de dados original (Região Intermediária sem outliers a 5 desvios padrão)
+```{r, echo=FALSE}
+# Gerar gráficos de pizza para cada modelo
+plot_Munic <- plot_pizza_2D(mod_Temer_Munic)
+plot_Imed <- plot_pizza_2D(mod_Temer_Imed)
+plot_Inter <- plot_pizza_2D(mod_Temer_Inter)
+plot_UF <- plot_pizza_2D(mod_Temer_UF)
+
+
+# Ajustar espaçamento para melhor utilização da área da tela
+grid.arrange(
+  plot_Munic,  plot_Imed, plot_Inter, plot_UF,
+  ncol = 2,
+  widths = c(1, 1),
+  heights = c(1, 1),
+  top = "Comparação dos Modelos da Janela Temer (2017 - 2018)"
+)
+
+```
+
+
+## **Componentes de variância lado a lado para análise quantitativa entre os modelos**.
+```{r, echo=FALSE}
+# Executar a comparação com os 4 modelos
+models <- list(mod_Temer_Munic, mod_Temer_Imed, mod_Temer_Inter ,mod_Temer_UF )
+names <- c("Temer Munic", "Temer Imed", "Temer Inter", "Temer UF")
+
+comparison_table <- compare_variances(models, names)
+comparison_table
+```
+
+
+## **Comparando AIC e BIC para os modelos**
+```{r, echo=FALSE}
+
+model_comparison <- data.frame(
+  Model = c("Temer UF", "Temer Inter", "Temer Imed", "Temer Munic"),
+  AIC = c(AIC(mod_Temer_UF), AIC(mod_Temer_Inter), AIC(mod_Temer_Imed), AIC(mod_Temer_Munic)),
+  BIC = c(BIC(mod_Temer_UF), BIC(mod_Temer_Inter), BIC(mod_Temer_Imed), BIC(mod_Temer_Munic))
+)
+model_comparison
+
+```
+
+---
+
+## **Resumo estatístico da Janela Dilma2:**
+```{r descricao_estatisticaDilma2, echo=FALSE}
+est_munic <- calcular_estatisticas(df_Dilma2_filteredMunic, "Janela Dilma2 (Município >= 3)")
+est_imed <- calcular_estatisticas(df_Dilma2_filteredImed, "Janela Dilma2 (Reg. Imediata >= 5)")
+est_inter <- calcular_estatisticas(df_Dilma2_filteredIntermed, "Janela Dilma2 (Reg. Intermediária >= 5)")
+est_UF <- calcular_estatisticas(df_Dilma2_filteredUF, "Janela Dilma2 (Estado >= 5)")
+
+est_munic
+est_imed
+est_inter
+est_UF
+
+```
+
+### *Outliers identificados nas Janelas referente as Regiões Intermediária e Estadual:*
+
+```{r outlierDilma2, echo=FALSE}
+
+df_Dilma2_filteredMunicLimpo <- remover_outliers_zscore(df_Dilma2_filteredMunic, "SOBRAS_POR_ATIVO")
+
+df_sem_outliers_ZscoreDilma2_Munic <- df_Dilma2_filteredMunicLimpo$df_sem_outliers
+df_com_outliers_ZscoreDilma2_Munic <- df_Dilma2_filteredMunicLimpo$df_com_outliers
+
+# library(knitr)
+# library(kableExtra)
+
+# Exibir a tibble formatada com kable
+df_com_outliers_ZscoreDilma2_Munic %>%
+  kable() %>%
+  kable_styling(full_width = FALSE)
+
+
+novo <- calcular_estatisticas(df_sem_outliers_ZscoreDilma2_Munic, "Janela Dilma2 (Z-score Município)")
+novo
+
+
+
+df_Dilma2_filteredImedLimpo <- remover_outliers_zscore(df_Dilma2_filteredImed, "SOBRAS_POR_ATIVO")
+
+df_sem_outliers_ZscoreDilma2_Imed <- df_Dilma2_filteredImedLimpo$df_sem_outliers
+df_com_outliers_ZscoreDilma2_Imed <- df_Dilma2_filteredImedLimpo$df_com_outliers
+
+df_com_outliers_ZscoreDilma2_Imed %>%
+  kable() %>%
+  kable_styling(full_width = FALSE)
+
+
+novo <- calcular_estatisticas(df_sem_outliers_ZscoreDilma2_Imed, "Janela Dilma2 (Z-score Imediata)")
+novo
+
+
+df_Dilma2_filteredInterLimpo <- remover_outliers_zscore(df_Dilma2_filteredIntermed, "SOBRAS_POR_ATIVO")
+
+df_sem_outliers_ZscoreDilma2_Inter <- df_Dilma2_filteredInterLimpo$df_sem_outliers
+df_com_outliers_ZscoreDilma2_Inter <- df_Dilma2_filteredInterLimpo$df_com_outliers
+
+df_com_outliers_ZscoreDilma2_Inter %>%
+  kable() %>%
+  kable_styling(full_width = FALSE)
+
+
+novo <- calcular_estatisticas(df_sem_outliers_ZscoreDilma2_Inter, "Janela Dilma2 (Z-score Inter)")
+novo
+
+
+df_Dilma2_filteredUFLimpo <- remover_outliers_zscore(df_Dilma2_filteredUF, "SOBRAS_POR_ATIVO")
+
+df_sem_outliers_ZscoreDilma2_UF <- df_Dilma2_filteredUFLimpo$df_sem_outliers
+df_com_outliers_ZscoreDilma2_UF <- df_Dilma2_filteredUFLimpo$df_com_outliers
+
+df_com_outliers_ZscoreDilma2_UF %>%
+  kable() %>%
+  kable_styling(full_width = FALSE)
+
+
+novo <- calcular_estatisticas(df_sem_outliers_ZscoreDilma2_UF, "Janela Dilma2 (Z-score Estado)")
+novo
+
+
+
+```
+
+## Boxplot das Janelas Dilma2
+```{r, echo=FALSE}
+
+# Criando os dois boxplots
+p1 <- ggplot(df_Dilma2_filteredMunic, aes(y = SOBRAS_POR_ATIVO)) + 
+  geom_boxplot() + 
+  ggtitle("Todos dados da Janela Dilma2 - Municípios ")+
+  theme(plot.title = element_text(hjust = 0.5))
+
+p2 <- ggplot(df_Dilma2_filteredMunicLimpo$df_sem_outliers, aes(y = SOBRAS_POR_ATIVO)) + 
+  geom_boxplot() + 
+  ggtitle("Janela Dilma2 - Municípios \nsem outliers a 3 desvios padrão") +
+  theme(plot.title = element_text(hjust = 0.5))
+
+# Exibindo os gráficos lado a lado
+grid.arrange(p1, p2, ncol = 2)
+
+
+# Criando os dois boxplots
+p1 <- ggplot(df_Dilma2_filteredImed, aes(y = SOBRAS_POR_ATIVO)) + 
+  geom_boxplot() + 
+  ggtitle("Todos as dados da Janela Dilma2 \nRegião Imediata ")+
+  theme(plot.title = element_text(hjust = 0.5))
+
+p2 <- ggplot(df_Dilma2_filteredImedLimpo$df_sem_outliers, aes(y = SOBRAS_POR_ATIVO)) + 
+  geom_boxplot() + 
+  ggtitle("Janela Dilma2 - Reg. Imediata \nsem Outliers a 3 desvios padrão")+
+  theme(plot.title = element_text(hjust = 0.5))
+
+# Exibindo os gráficos lado a lado
+grid.arrange(p1, p2, ncol = 2)
+
+
+# Criando os dois boxplots
+p1 <- ggplot(df_Dilma2_filteredIntermed, aes(y = SOBRAS_POR_ATIVO)) + 
+  geom_boxplot() + 
+  ggtitle("Todos as dados da Janela Dilma2 \nRegião Intermediária")+
+  theme(plot.title = element_text(hjust = 0.5))
+
+p2 <- ggplot(df_Dilma2_filteredInterLimpo$df_sem_outliers, aes(y = SOBRAS_POR_ATIVO)) + 
+  geom_boxplot() + 
+  ggtitle("Reg. Int. da Janela Dilma2 \nsem Outliers a 5 desvios padrão")+
+  theme(plot.title = element_text(hjust = 0.5))
+
+# Exibindo os gráficos lado a lado
+grid.arrange(p1, p2, ncol = 2)
+
+
+# Criando os dois boxplots
+p1 <- ggplot(df_Dilma2_filteredUF, aes(y = SOBRAS_POR_ATIVO)) + 
+  geom_boxplot() + 
+  ggtitle("Todos as dados da Janela Dilma2 \nEstado")+
+  theme(plot.title = element_text(hjust = 0.5))
+
+p2 <- ggplot(df_Dilma2_filteredUFLimpo$df_sem_outliers, aes(y = SOBRAS_POR_ATIVO)) + 
+  geom_boxplot() + 
+  ggtitle("Estados da Janela Dilma2\nsem Outliers a 3 desvios padrão")+
+  theme(plot.title = element_text(hjust = 0.5))
+
+# Exibindo os gráficos lado a lado
+grid.arrange(p1, p2, ncol = 2)
+
+
+```
+
+
+```{r, echo=FALSE, message=FALSE, warning=FALSE, fig.width=10, fig.height=8}
+# Carregar a biblioteca necessária
+library(ggplot2)
+library(gridExtra)
+
+# Gráfico 1: Contagem por Localização Município
+# p1 <- ggplot(df_Bolsonado_filteredMunic %>% filter(Ano == 2022), aes(x = factor(Localizacao_munic))) +
+#   geom_bar() +
+#   geom_text(stat = 'count', aes(label = ..count..), vjust = -0.5) + 
+#   labs(title = "Contagem por Localização Município", x = "Município", y = "Contagem") +
+#   theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+#   theme_minimal()
+
+# p1 <- ggplot(df_Bolsonado_filteredMunic %>% filter(Ano == 2022), 
+#              aes(x = factor(Localizacao_munic))) +
+#   geom_bar() +
+#   geom_text(stat = 'count', aes(label = ..count..), vjust = -0.5) +  # Aumenta o valor de vjust para posicionar melhor os números
+#   labs(title = "Contagem por Localização Município (Ano: 2022)", x = "Município", y = "Contagem") +
+#   theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+#   theme_minimal()
+# 
+# 
+# # Gráfico 2: Contagem por Estado (UF)
+# p2 <- ggplot(df_Bolsonado_filteredImed %>% filter(Ano == 2022), aes(x = factor(Localizacao_Imed))) +
+#   geom_bar() +
+#   geom_text(stat = 'count', aes(label = ..count..), vjust = -0.5) + 
+#   labs(title = "Contagem por Estado (UF)", x = "Estado (UF)", y = "Contagem") +
+#   theme_minimal()
+# 
+# # Gráfico 3: Contagem por Localização Imediata
+# p3 <- ggplot(df_Bolsonado_filteredIntermed %>% filter(Ano == 2022), aes(x = factor(Localizacao_Inter))) +
+#   geom_bar() +
+#   geom_text(stat = 'count', aes(label = ..count..), vjust = -0.5) + 
+#   labs(title = "Contagem por Localização Imediata", x = "Localização Imediata", y = "Contagem") +
+#   theme_minimal()
+# 
+# 
+# # Gráfico 4: Contagem por Localização Intermediária
+# p4 <- ggplot(df_Bolsonado_filteredUF %>% filter(Ano == 2022), aes(x = factor(Localizacao_UF))) +
+#   geom_bar() +
+#   geom_text(stat = 'count', aes(label = ..count..), vjust = -0.5) + 
+#   labs(title = "Contagem por Localização Intermediária", x = "Localização Intermediária", y = "Contagem") +
+#   theme_minimal()
+# 
+# 
+# # Organizar os gráficos em uma tabela 2x2
+# grid.arrange(p1, p2, p3, p4, ncol = 2)
+# 
+
+# Filtrar os dados para o ano de 2022
+df_filtered <- df_Dilma2_filteredMunic %>% filter(Ano == 2016)
+
+# Criar uma tabela de frequências para a quantidade de ocorrências por município
+freq_table <- df_filtered %>%
+  count(Localizacao_munic) %>%  # Conta quantas vezes cada município aparece
+  count(n)  # Conta quantas vezes cada contagem de município aparece
+
+# Gráfico de barras mostrando a quantidade de vezes que cada contagem de município ocorre
+p <- ggplot(freq_table, aes(x = factor(n), y = nn)) + 
+  geom_bar(stat = "identity") +
+  geom_text(aes(label = nn), vjust = -0.5) +  # Adiciona os números em cima das barras
+  labs(title = "Distribuição de Contagens por Município (Janela Dilma2)",
+       x = "Quantidade de Municípios",
+       y = "Frequência") +
+  theme_minimal()
+
+# Exibir o gráfico
+
+# Filtrar os dados para o ano de 2022
+df_filtered_imed <- df_Dilma2_filteredImed %>% filter(Ano == 2016)
+
+# Criar uma tabela de frequências para a quantidade de ocorrências por Região Imediata
+freq_table_imed <- df_filtered_imed %>%
+  count(Cod_Reg_Imediata) %>%  # Conta quantas vezes cada Região Imediata aparece
+  count(n)  # Conta quantas vezes cada contagem de Região Imediata aparece
+
+# Gráfico de barras mostrando a quantidade de vezes que cada contagem de Região Imediata ocorre
+p_imed <- ggplot(freq_table_imed, aes(x = factor(n), y = nn)) + 
+  geom_bar(stat = "identity") +
+  geom_text(aes(label = nn), vjust = -0.5) +  # Adiciona os números em cima das barras
+  labs(title = "Distribuição de Contagens por Reg. Imediata (Janela Dilma2)",
+       x = "Quantidade de Regiões Imediatas",
+       y = "Frequência") +
+  theme_minimal()
+
+# Exibir o gráfico
+
+# Filtrar os dados para o ano de 2022
+df_filtered_intermed <- df_Dilma2_filteredInterLimpo$df_sem_outliers %>% filter(Ano == 2016)
+
+# Criar uma tabela de frequências para a quantidade de ocorrências por Região Intermediária
+freq_table_intermed <- df_filtered_intermed %>%
+  count(Cod_Reg_Intermed) %>%  # Conta quantas vezes cada Região Intermediária aparece
+  count(n)  # Conta quantas vezes cada contagem de Região Intermediária aparece
+
+# Gráfico de barras mostrando a quantidade de vezes que cada contagem de Região Intermediária ocorre
+p_intermed <- ggplot(freq_table_intermed, aes(x = factor(n), y = nn)) + 
+  geom_bar(stat = "identity") +
+  geom_text(aes(label = nn), vjust = -0.5) +  # Adiciona os números em cima das barras
+  labs(title = "Distribuição de Contagens por Reg. Inter. (Janela Dilma2)",
+       x = "Quantidade de Regiões Intermediárias",
+       y = "Frequência") +
+  theme_minimal()
+
+
+# Gráfico 4: Contagem por Localização Intermediária
+p4 <- ggplot(df_Dilma2_filteredUF %>% filter(Ano == 2016), aes(x = factor(Localizacao_UF))) +
+  geom_bar() +
+  geom_text(stat = 'count', aes(label = ..count..), vjust = -0.5) +
+  labs(title = "Contagem por Localização Estadual", x = "Localização Estaual", y = "Contagem") +
+  theme_minimal()
+
+
+grid.arrange(p, p_imed, p_intermed, p4, ncol = 2)
+
+```
+
+---
+
+### Rodando a regressão usando **Modelos Lineares Mistos** com 3 níveis (1 - Ano; 2 - Unidade de Negócio; 3 - Localização. 
+
+##Estão sendo utilizadas as seguintes variáveis de localização: **Estado, Região Intermediária, Região Imediata e Município**. 
+
+```{r, semRemoverOutlierDilma2}
+
+mod_Dilma2_Munic <- lmer(SOBRAS_POR_ATIVO ~ Ano + (1 | Unidade_de_Negocio) + (1 | Localizacao_munic), data = df_Dilma2_filteredMunic)
+summary(mod_Dilma2_Munic)
+
+mod_Dilma2_UF <- lmer(SOBRAS_POR_ATIVO ~ Ano + (1 | Unidade_de_Negocio) + (1 | Localizacao_UF) , data = df_Dilma2_filteredUF)
+summary(mod_Dilma2_UF)
+
+mod_Dilma2_Inter <- lmer(SOBRAS_POR_ATIVO ~ Ano + (1 | Unidade_de_Negocio) + (1 | Localizacao_Inter), data = df_Dilma2_filteredIntermed)
+summary(mod_Dilma2_Inter)
+
+mod_Dilma2_Imed <- lmer(SOBRAS_POR_ATIVO ~ Ano + (1 | Unidade_de_Negocio) + (1 | Localizacao_Imed), data = df_Dilma2_filteredImed)
+summary(mod_Dilma2_Imed)
+
+
+
+```
+
+# Base de dados original (Região Intermediária sem outliers a 5 desvios padrão)
+```{r, echo=FALSE}
+# Gerar gráficos de pizza para cada modelo
+plot_Munic <- plot_pizza_2D(mod_Dilma2_Munic)
+plot_Imed <- plot_pizza_2D(mod_Dilma2_Imed)
+plot_Inter <- plot_pizza_2D(mod_Dilma2_Inter)
+plot_UF <- plot_pizza_2D(mod_Dilma2_UF)
+
+
+# Ajustar espaçamento para melhor utilização da área da tela
+grid.arrange(
+  plot_Munic,  plot_Imed, plot_Inter, plot_UF,
+  ncol = 2,
+  widths = c(1, 1),
+  heights = c(1, 1),
+  top = "Comparação dos Modelos da Janela Dilma2 (2015 - 2016)"
+)
+
+```
+
+
+## **Componentes de variância lado a lado para análise quantitativa entre os modelos**.
+```{r, echo=FALSE}
+# Executar a comparação com os 4 modelos
+models <- list(mod_Dilma2_Munic, mod_Dilma2_Imed, mod_Dilma2_Inter ,mod_Dilma2_UF )
+names <- c("Dilma2 Munic", "Dilma2 Imed", "Dilma2 Inter", "Dilma2 UF")
+
+comparison_table <- compare_variances(models, names)
+comparison_table
+```
+
+
+## **Comparando AIC e BIC para os modelos**
+```{r, echo=FALSE}
+
+model_comparison <- data.frame(
+  Model = c("Dilma2 UF", "Dilma2 Inter", "Dilma2 Imed", "Dilma2 Munic"),
+  AIC = c(AIC(mod_Dilma2_UF), AIC(mod_Dilma2_Inter), AIC(mod_Dilma2_Imed), AIC(mod_Dilma2_Munic)),
+  BIC = c(BIC(mod_Dilma2_UF), BIC(mod_Dilma2_Inter), BIC(mod_Dilma2_Imed), BIC(mod_Dilma2_Munic))
+)
+model_comparison
+
+```
+
+
+---
+
+## **Resumo estatístico da Janela Dilma1:**
+```{r descricao_estatisticaDilma1, echo=FALSE}
+est_munic <- calcular_estatisticas(df_Dilma1_filteredMunic, "Janela Dilma1 (Município >= 3)")
+est_imed <- calcular_estatisticas(df_Dilma1_filteredImed, "Janela Dilma1 (Reg. Imediata >= 5)")
+est_inter <- calcular_estatisticas(df_Dilma1_filteredIntermed, "Janela Dilma1 (Reg. Intermediária >= 5)")
+est_UF <- calcular_estatisticas(df_Dilma1_filteredUF, "Janela Dilma1 (Estado >= 5)")
+
+est_munic
+est_imed
+est_inter
+est_UF
+
+```
+
+### *Outliers identificados nas Janelas referente as Regiões Intermediária e Estadual:*
+
+```{r outlierDilma1, echo=FALSE}
+
+df_Dilma1_filteredMunicLimpo <- remover_outliers_zscore(df_Dilma1_filteredMunic, "SOBRAS_POR_ATIVO")
+
+df_sem_outliers_ZscoreDilma1_Munic <- df_Dilma1_filteredMunicLimpo$df_sem_outliers
+df_com_outliers_ZscoreDilma1_Munic <- df_Dilma1_filteredMunicLimpo$df_com_outliers
+
+# library(knitr)
+# library(kableExtra)
+
+# Exibir a tibble formatada com kable
+df_com_outliers_ZscoreDilma1_Munic %>%
+  kable() %>%
+  kable_styling(full_width = FALSE)
+
+
+novo <- calcular_estatisticas(df_sem_outliers_ZscoreDilma1_Munic, "Janela Dilma1 (Z-score Município)")
+novo
+
+
+
+df_Dilma1_filteredImedLimpo <- remover_outliers_zscore(df_Dilma1_filteredImed, "SOBRAS_POR_ATIVO")
+
+df_sem_outliers_ZscoreDilma1_Imed <- df_Dilma1_filteredImedLimpo$df_sem_outliers
+df_com_outliers_ZscoreDilma1_Imed <- df_Dilma1_filteredImedLimpo$df_com_outliers
+
+df_com_outliers_ZscoreDilma1_Imed %>%
+  kable() %>%
+  kable_styling(full_width = FALSE)
+
+
+novo <- calcular_estatisticas(df_sem_outliers_ZscoreDilma1_Imed, "Janela Dilma1 (Z-score Imediata)")
+novo
+
+
+df_Dilma1_filteredInterLimpo <- remover_outliers_zscore(df_Dilma1_filteredIntermed, "SOBRAS_POR_ATIVO")
+
+df_sem_outliers_ZscoreDilma1_Inter <- df_Dilma1_filteredInterLimpo$df_sem_outliers
+df_com_outliers_ZscoreDilma1_Inter <- df_Dilma1_filteredInterLimpo$df_com_outliers
+
+df_com_outliers_ZscoreDilma1_Inter %>%
+  kable() %>%
+  kable_styling(full_width = FALSE)
+
+
+novo <- calcular_estatisticas(df_sem_outliers_ZscoreDilma1_Inter, "Janela Dilma1 (Z-score Inter)")
+novo
+
+
+df_Dilma1_filteredUFLimpo <- remover_outliers_zscore(df_Dilma1_filteredUF, "SOBRAS_POR_ATIVO", threshold = 13)
+
+df_sem_outliers_ZscoreDilma1_UF <- df_Dilma1_filteredUFLimpo$df_sem_outliers
+df_com_outliers_ZscoreDilma1_UF <- df_Dilma1_filteredUFLimpo$df_com_outliers
+
+df_com_outliers_ZscoreDilma1_UF %>%
+  kable() %>%
+  kable_styling(full_width = FALSE)
+
+
+novo <- calcular_estatisticas(df_sem_outliers_ZscoreDilma1_UF, "Janela Dilma1 (Z-score Estado)")
+novo
+
+
+
+```
+
+## Boxplot das Janelas Dilma1
+```{r, echo=FALSE}
+
+# Criando os dois boxplots
+p1 <- ggplot(df_Dilma1_filteredMunic, aes(y = SOBRAS_POR_ATIVO)) + 
+  geom_boxplot() + 
+  ggtitle("Todos dados da Janela Dilma1 - Municípios ")+
+  theme(plot.title = element_text(hjust = 0.5))
+
+p2 <- ggplot(df_Dilma1_filteredMunicLimpo$df_sem_outliers, aes(y = SOBRAS_POR_ATIVO)) + 
+  geom_boxplot() + 
+  ggtitle("Janela Dilma1 - Municípios \nsem outliers a 3 desvios padrão") +
+  theme(plot.title = element_text(hjust = 0.5))
+
+# Exibindo os gráficos lado a lado
+grid.arrange(p1, p2, ncol = 2)
+
+
+# Criando os dois boxplots
+p1 <- ggplot(df_Dilma1_filteredImed, aes(y = SOBRAS_POR_ATIVO)) + 
+  geom_boxplot() + 
+  ggtitle("Todos as dados da Janela Dilma1 \nRegião Imediata ")+
+  theme(plot.title = element_text(hjust = 0.5))
+
+p2 <- ggplot(df_Dilma1_filteredImedLimpo$df_sem_outliers, aes(y = SOBRAS_POR_ATIVO)) + 
+  geom_boxplot() + 
+  ggtitle("Janela Dilma1 - Reg. Imediata \nsem Outliers a 3 desvios padrão")+
+  theme(plot.title = element_text(hjust = 0.5))
+
+# Exibindo os gráficos lado a lado
+grid.arrange(p1, p2, ncol = 2)
+
+
+# Criando os dois boxplots
+p1 <- ggplot(df_Dilma1_filteredIntermed, aes(y = SOBRAS_POR_ATIVO)) + 
+  geom_boxplot() + 
+  ggtitle("Todos as dados da Janela Dilma1 \nRegião Intermediária")+
+  theme(plot.title = element_text(hjust = 0.5))
+
+p2 <- ggplot(df_Dilma1_filteredInterLimpo$df_sem_outliers, aes(y = SOBRAS_POR_ATIVO)) + 
+  geom_boxplot() + 
+  ggtitle("Reg. Int. da Janela Dilma1 \nsem Outliers a 3 desvios padrão")+
+  theme(plot.title = element_text(hjust = 0.5))
+
+# Exibindo os gráficos lado a lado
+grid.arrange(p1, p2, ncol = 2)
+
+
+# Criando os dois boxplots
+p1 <- ggplot(df_Dilma1_filteredUF, aes(y = SOBRAS_POR_ATIVO)) + 
+  geom_boxplot() + 
+  ggtitle("Todos as dados da Janela Dilma1 \nEstado")+
+  theme(plot.title = element_text(hjust = 0.5))
+
+p2 <- ggplot(df_Dilma1_filteredUFLimpo$df_sem_outliers, aes(y = SOBRAS_POR_ATIVO)) + 
+  geom_boxplot() + 
+  ggtitle("Estados da Janela Dilma1\nsem Outliers a 13 desvios padrão (-1)")+
+  theme(plot.title = element_text(hjust = 0.5))
+
+# Exibindo os gráficos lado a lado
+grid.arrange(p1, p2, ncol = 2)
+
+
+```
+
+
+```{r, echo=FALSE, message=FALSE, warning=FALSE, fig.width=10, fig.height=8}
+# Carregar a biblioteca necessária
+library(ggplot2)
+library(gridExtra)
+
+# Gráfico 1: Contagem por Localização Município
+# p1 <- ggplot(df_Bolsonado_filteredMunic %>% filter(Ano == 2022), aes(x = factor(Localizacao_munic))) +
+#   geom_bar() +
+#   geom_text(stat = 'count', aes(label = ..count..), vjust = -0.5) + 
+#   labs(title = "Contagem por Localização Município", x = "Município", y = "Contagem") +
+#   theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+#   theme_minimal()
+
+# p1 <- ggplot(df_Bolsonado_filteredMunic %>% filter(Ano == 2022), 
+#              aes(x = factor(Localizacao_munic))) +
+#   geom_bar() +
+#   geom_text(stat = 'count', aes(label = ..count..), vjust = -0.5) +  # Aumenta o valor de vjust para posicionar melhor os números
+#   labs(title = "Contagem por Localização Município (Ano: 2022)", x = "Município", y = "Contagem") +
+#   theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+#   theme_minimal()
+# 
+# 
+# # Gráfico 2: Contagem por Estado (UF)
+# p2 <- ggplot(df_Bolsonado_filteredImed %>% filter(Ano == 2022), aes(x = factor(Localizacao_Imed))) +
+#   geom_bar() +
+#   geom_text(stat = 'count', aes(label = ..count..), vjust = -0.5) + 
+#   labs(title = "Contagem por Estado (UF)", x = "Estado (UF)", y = "Contagem") +
+#   theme_minimal()
+# 
+# # Gráfico 3: Contagem por Localização Imediata
+# p3 <- ggplot(df_Bolsonado_filteredIntermed %>% filter(Ano == 2022), aes(x = factor(Localizacao_Inter))) +
+#   geom_bar() +
+#   geom_text(stat = 'count', aes(label = ..count..), vjust = -0.5) + 
+#   labs(title = "Contagem por Localização Imediata", x = "Localização Imediata", y = "Contagem") +
+#   theme_minimal()
+# 
+# 
+# # Gráfico 4: Contagem por Localização Intermediária
+# p4 <- ggplot(df_Bolsonado_filteredUF %>% filter(Ano == 2022), aes(x = factor(Localizacao_UF))) +
+#   geom_bar() +
+#   geom_text(stat = 'count', aes(label = ..count..), vjust = -0.5) + 
+#   labs(title = "Contagem por Localização Intermediária", x = "Localização Intermediária", y = "Contagem") +
+#   theme_minimal()
+# 
+# 
+# # Organizar os gráficos em uma tabela 2x2
+# grid.arrange(p1, p2, p3, p4, ncol = 2)
+# 
+
+# Filtrar os dados para o ano de 2022
+df_filtered <- df_Dilma1_filteredMunic %>% filter(Ano == 2014)
+
+# Criar uma tabela de frequências para a quantidade de ocorrências por município
+freq_table <- df_filtered %>%
+  count(Localizacao_munic) %>%  # Conta quantas vezes cada município aparece
+  count(n)  # Conta quantas vezes cada contagem de município aparece
+
+# Gráfico de barras mostrando a quantidade de vezes que cada contagem de município ocorre
+p <- ggplot(freq_table, aes(x = factor(n), y = nn)) + 
+  geom_bar(stat = "identity") +
+  geom_text(aes(label = nn), vjust = -0.5) +  # Adiciona os números em cima das barras
+  labs(title = "Distribuição de Contagens por Município (Janela Dilma1)",
+       x = "Quantidade de Municípios",
+       y = "Frequência") +
+  theme_minimal()
+
+# Exibir o gráfico
+
+# Filtrar os dados para o ano de 2022
+df_filtered_imed <- df_Dilma1_filteredImed %>% filter(Ano == 2014)
+
+# Criar uma tabela de frequências para a quantidade de ocorrências por Região Imediata
+freq_table_imed <- df_filtered_imed %>%
+  count(Cod_Reg_Imediata) %>%  # Conta quantas vezes cada Região Imediata aparece
+  count(n)  # Conta quantas vezes cada contagem de Região Imediata aparece
+
+# Gráfico de barras mostrando a quantidade de vezes que cada contagem de Região Imediata ocorre
+p_imed <- ggplot(freq_table_imed, aes(x = factor(n), y = nn)) + 
+  geom_bar(stat = "identity") +
+  geom_text(aes(label = nn), vjust = -0.5) +  # Adiciona os números em cima das barras
+  labs(title = "Distribuição de Contagens por Reg. Imediata (Janela Dilma2)",
+       x = "Quantidade de Regiões Imediatas",
+       y = "Frequência") +
+  theme_minimal()
+
+# Exibir o gráfico
+
+# Filtrar os dados para o ano de 2022
+df_filtered_intermed <- df_Dilma1_filteredInterLimpo$df_sem_outliers %>% filter(Ano == 2014)
+
+# Criar uma tabela de frequências para a quantidade de ocorrências por Região Intermediária
+freq_table_intermed <- df_filtered_intermed %>%
+  count(Cod_Reg_Intermed) %>%  # Conta quantas vezes cada Região Intermediária aparece
+  count(n)  # Conta quantas vezes cada contagem de Região Intermediária aparece
+
+# Gráfico de barras mostrando a quantidade de vezes que cada contagem de Região Intermediária ocorre
+p_intermed <- ggplot(freq_table_intermed, aes(x = factor(n), y = nn)) + 
+  geom_bar(stat = "identity") +
+  geom_text(aes(label = nn), vjust = -0.5) +  # Adiciona os números em cima das barras
+  labs(title = "Distribuição de Contagens por Reg. Inter. (Janela Dilma1)",
+       x = "Quantidade de Regiões Intermediárias",
+       y = "Frequência") +
+  theme_minimal()
+
+
+# Gráfico 4: Contagem por Localização Intermediária
+p4 <- ggplot(df_Dilma1_filteredUFLimpo$df_sem_outliers %>% filter(Ano == 2014), aes(x = factor(Localizacao_UF))) +
+  geom_bar() +
+  geom_text(stat = 'count', aes(label = ..count..), vjust = -0.5) +
+  labs(title = "Contagem por Localização Estadual", x = "Localização Estadual", y = "Contagem") +
+  theme_minimal()
+
+
+grid.arrange(p, p_imed, p_intermed, p4, ncol = 2)
+
+```
+
+---
+
+### Rodando a regressão usando **Modelos Lineares Mistos** com 3 níveis (1 - Ano; 2 - Unidade de Negócio; 3 - Localização. 
+
+##Estão sendo utilizadas as seguintes variáveis de localização: **Estado, Região Intermediária, Região Imediata e Município**. 
+
+```{r, semRemoverOutlierLula2}
+
+mod_Dilma1_Munic <- lmer(SOBRAS_POR_ATIVO ~ Ano + (1 | Unidade_de_Negocio) + (1 | Localizacao_munic), data = df_Dilma1_filteredMunic)
+summary(mod_Dilma1_Munic)
+
+mod_Dilma1_UF <- lmer(SOBRAS_POR_ATIVO ~ Ano + (1 | Unidade_de_Negocio) + (1 | Localizacao_UF) , data = df_Dilma1_filteredUF)
+summary(mod_Dilma1_UF)
+
+mod_Dilma1_Inter <- lmer(SOBRAS_POR_ATIVO ~ Ano + (1 | Unidade_de_Negocio) + (1 | Localizacao_Inter), data = df_Dilma1_filteredIntermed)
+summary(mod_Dilma1_Inter)
+
+mod_Dilma1_Imed <- lmer(SOBRAS_POR_ATIVO ~ Ano + (1 | Unidade_de_Negocio) + (1 | Localizacao_Imed), data = df_Dilma1_filteredUFLimpo$df_sem_outliers)
+summary(mod_Dilma1_Imed)
+
+
+
+```
+
+# Base de dados original (Região Estadual sem 1 outlier a 13 desvios padrão)
+```{r, echo=FALSE}
+# Gerar gráficos de pizza para cada modelo
+plot_Munic <- plot_pizza_2D(mod_Dilma1_Munic)
+plot_Imed <- plot_pizza_2D(mod_Dilma1_Imed)
+plot_Inter <- plot_pizza_2D(mod_Dilma1_Inter)
+plot_UF <- plot_pizza_2D(mod_Dilma1_UF)
+
+
+# Ajustar espaçamento para melhor utilização da área da tela
+grid.arrange(
+  plot_Munic,  plot_Imed, plot_Inter, plot_UF,
+  ncol = 2,
+  widths = c(1, 1),
+  heights = c(1, 1),
+  top = "Comparação dos Modelos da Janela Dilma1 (2011 - 2014)"
+)
+
+```
+
+
+## **Componentes de variância lado a lado para análise quantitativa entre os modelos**.
+```{r, echo=FALSE}
+# Executar a comparação com os 4 modelos
+models <- list(mod_Dilma1_Munic, mod_Dilma1_Imed, mod_Dilma1_Inter ,mod_Dilma1_UF )
+names <- c("Dilma1 Munic", "Dilma1 Imed", "Dilma1 Inter", "Dilma1 UF")
+
+comparison_table <- compare_variances(models, names)
+comparison_table
+```
+
+
+## **Comparando AIC e BIC para os modelos**
+```{r, echo=FALSE}
+
+model_comparison <- data.frame(
+  Model = c("Dilma1 UF", "Dilma1 Inter", "Dilma1 Imed", "Dilma1 Munic"),
+  AIC = c(AIC(mod_Dilma1_UF), AIC(mod_Dilma1_Inter), AIC(mod_Dilma1_Imed), AIC(mod_Dilma1_Munic)),
+  BIC = c(BIC(mod_Dilma1_UF), BIC(mod_Dilma1_Inter), BIC(mod_Dilma1_Imed), BIC(mod_Dilma1_Munic))
+)
+model_comparison
+
+```
+
+---
+
+## **Resumo estatístico da Janela Lula2:**
+```{r descricao_estatisticaLula2, echo=FALSE}
+est_munic <- calcular_estatisticas(df_Lula2_filteredMunic, "Janela Lula2 (Município >= 3)")
+est_imed <- calcular_estatisticas(df_Lula2_filteredImed, "Janela Lula2 (Reg. Imediata >= 5)")
+est_inter <- calcular_estatisticas(df_Lula2_filteredIntermed, "Janela Lula2 (Reg. Intermediária >= 5)")
+est_UF <- calcular_estatisticas(df_Lula2_filteredUF, "Janela Lula2 (Estado >= 5)")
+
+est_munic
+est_imed
+est_inter
+est_UF
+
+```
+
+### *Outliers identificados nas Janelas:*
+
+```{r outlierLula2, echo=FALSE}
+
+df_Lula2_filteredMunicLimpo <- remover_outliers_zscore(df_Lula2_filteredMunic, "SOBRAS_POR_ATIVO")
+
+df_sem_outliers_ZscoreLula2_Munic <- df_Lula2_filteredMunicLimpo$df_sem_outliers
+df_com_outliers_ZscoreLula2_Munic <- df_Lula2_filteredMunicLimpo$df_com_outliers
+
+# library(knitr)
+# library(kableExtra)
+
+# Exibir a tibble formatada com kable
+df_com_outliers_ZscoreLula2_Munic %>%
+  kable() %>%
+  kable_styling(full_width = FALSE)
+
+
+novo <- calcular_estatisticas(df_sem_outliers_ZscoreLula2_Munic, "Janela Lula2 (Z-score Município)")
+novo
+
+
+
+df_Lula2_filteredImedLimpo <- remover_outliers_zscore(df_Lula2_filteredImed, "SOBRAS_POR_ATIVO")
+
+df_sem_outliers_ZscoreLula2_Imed <- df_Lula2_filteredImedLimpo$df_sem_outliers
+df_com_outliers_ZscoreLula2_Imed <- df_Lula2_filteredImedLimpo$df_com_outliers
+
+df_com_outliers_ZscoreLula2_Imed %>%
+  kable() %>%
+  kable_styling(full_width = FALSE)
+
+
+novo <- calcular_estatisticas(df_sem_outliers_ZscoreLula2_Imed, "Janela Lula2 (Z-score Imediata)")
+novo
+
+
+df_Lula2_filteredInterLimpo <- remover_outliers_zscore(df_Lula2_filteredIntermed, "SOBRAS_POR_ATIVO")
+
+df_sem_outliers_ZscoreLula2_Inter <- df_Lula2_filteredInterLimpo$df_sem_outliers
+df_com_outliers_ZscoreLula2_Inter <- df_Lula2_filteredInterLimpo$df_com_outliers
+
+df_com_outliers_ZscoreLula2_Inter %>%
+  kable() %>%
+  kable_styling(full_width = FALSE)
+
+
+novo <- calcular_estatisticas(df_sem_outliers_ZscoreLula2_Inter, "Janela Lula2 (Z-score Inter)")
+novo
+
+
+df_Lula2_filteredUFLimpo <- remover_outliers_zscore(df_Lula2_filteredUF, "SOBRAS_POR_ATIVO")
+
+df_sem_outliers_ZscoreLula2_UF <- df_Lula2_filteredUFLimpo$df_sem_outliers
+df_com_outliers_ZscoreLula2_UF <- df_Lula2_filteredUFLimpo$df_com_outliers
+
+df_com_outliers_ZscoreLula2_UF %>%
+  kable() %>%
+  kable_styling(full_width = FALSE)
+
+
+novo <- calcular_estatisticas(df_sem_outliers_ZscoreLula2_UF, "Janela Lula2 (Z-score Estado)")
+novo
+
+
+
+```
+
+## Boxplot das Janelas Lula2
+```{r, echo=FALSE}
+
+# Criando os dois boxplots
+p1 <- ggplot(df_Lula2_filteredMunic, aes(y = SOBRAS_POR_ATIVO)) + 
+  geom_boxplot() + 
+  ggtitle("Todos dados da Janela Lula2 - Municípios ")+
+  theme(plot.title = element_text(hjust = 0.5))
+
+p2 <- ggplot(df_Lula2_filteredMunicLimpo$df_sem_outliers, aes(y = SOBRAS_POR_ATIVO)) + 
+  geom_boxplot() + 
+  ggtitle("Janela Lula2 - Municípios \nsem outliers a 3 desvios padrão") +
+  theme(plot.title = element_text(hjust = 0.5))
+
+# Exibindo os gráficos lado a lado
+grid.arrange(p1, p2, ncol = 2)
+
+
+# Criando os dois boxplots
+p1 <- ggplot(df_Lula2_filteredImed, aes(y = SOBRAS_POR_ATIVO)) + 
+  geom_boxplot() + 
+  ggtitle("Todos as dados da Janela Lula2 \nRegião Imediata ")+
+  theme(plot.title = element_text(hjust = 0.5))
+
+p2 <- ggplot(df_Lula2_filteredImedLimpo$df_sem_outliers, aes(y = SOBRAS_POR_ATIVO)) + 
+  geom_boxplot() + 
+  ggtitle("Janela Lula2 - Reg. Imediata \nsem Outliers a 3 desvios padrão")+
+  theme(plot.title = element_text(hjust = 0.5))
+
+# Exibindo os gráficos lado a lado
+grid.arrange(p1, p2, ncol = 2)
+
+
+# Criando os dois boxplots
+p1 <- ggplot(df_Lula2_filteredIntermed, aes(y = SOBRAS_POR_ATIVO)) + 
+  geom_boxplot() + 
+  ggtitle("Todos as dados da Janela Lula2 \nRegião Intermediária")+
+  theme(plot.title = element_text(hjust = 0.5))
+
+p2 <- ggplot(df_Lula2_filteredInterLimpo$df_sem_outliers, aes(y = SOBRAS_POR_ATIVO)) + 
+  geom_boxplot() + 
+  ggtitle("Reg. Int. da Janela Lula2 \nsem Outliers a 3 desvios padrão")+
+  theme(plot.title = element_text(hjust = 0.5))
+
+# Exibindo os gráficos lado a lado
+grid.arrange(p1, p2, ncol = 2)
+
+
+# Criando os dois boxplots
+p1 <- ggplot(df_Lula2_filteredUF, aes(y = SOBRAS_POR_ATIVO)) + 
+  geom_boxplot() + 
+  ggtitle("Todos as dados da Janela Lula2 \nEstado")+
+  theme(plot.title = element_text(hjust = 0.5))
+
+p2 <- ggplot(df_Lula2_filteredUFLimpo$df_sem_outliers, aes(y = SOBRAS_POR_ATIVO)) + 
+  geom_boxplot() + 
+  ggtitle("Estados da Janela Lula2\nsem Outliers a 3 desvios padrão (-1)")+
+  theme(plot.title = element_text(hjust = 0.5))
+
+# Exibindo os gráficos lado a lado
+grid.arrange(p1, p2, ncol = 2)
+
+
+```
+
+
+```{r, echo=FALSE, message=FALSE, warning=FALSE, fig.width=10, fig.height=8}
+# Carregar a biblioteca necessária
+library(ggplot2)
+library(gridExtra)
+
+# Gráfico 1: Contagem por Localização Município
+# p1 <- ggplot(df_Bolsonado_filteredMunic %>% filter(Ano == 2022), aes(x = factor(Localizacao_munic))) +
+#   geom_bar() +
+#   geom_text(stat = 'count', aes(label = ..count..), vjust = -0.5) + 
+#   labs(title = "Contagem por Localização Município", x = "Município", y = "Contagem") +
+#   theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+#   theme_minimal()
+
+# p1 <- ggplot(df_Bolsonado_filteredMunic %>% filter(Ano == 2022), 
+#              aes(x = factor(Localizacao_munic))) +
+#   geom_bar() +
+#   geom_text(stat = 'count', aes(label = ..count..), vjust = -0.5) +  # Aumenta o valor de vjust para posicionar melhor os números
+#   labs(title = "Contagem por Localização Município (Ano: 2022)", x = "Município", y = "Contagem") +
+#   theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+#   theme_minimal()
+# 
+# 
+# # Gráfico 2: Contagem por Estado (UF)
+# p2 <- ggplot(df_Bolsonado_filteredImed %>% filter(Ano == 2022), aes(x = factor(Localizacao_Imed))) +
+#   geom_bar() +
+#   geom_text(stat = 'count', aes(label = ..count..), vjust = -0.5) + 
+#   labs(title = "Contagem por Estado (UF)", x = "Estado (UF)", y = "Contagem") +
+#   theme_minimal()
+# 
+# # Gráfico 3: Contagem por Localização Imediata
+# p3 <- ggplot(df_Bolsonado_filteredIntermed %>% filter(Ano == 2022), aes(x = factor(Localizacao_Inter))) +
+#   geom_bar() +
+#   geom_text(stat = 'count', aes(label = ..count..), vjust = -0.5) + 
+#   labs(title = "Contagem por Localização Imediata", x = "Localização Imediata", y = "Contagem") +
+#   theme_minimal()
+# 
+# 
+# # Gráfico 4: Contagem por Localização Intermediária
+# p4 <- ggplot(df_Bolsonado_filteredUF %>% filter(Ano == 2022), aes(x = factor(Localizacao_UF))) +
+#   geom_bar() +
+#   geom_text(stat = 'count', aes(label = ..count..), vjust = -0.5) + 
+#   labs(title = "Contagem por Localização Intermediária", x = "Localização Intermediária", y = "Contagem") +
+#   theme_minimal()
+# 
+# 
+# # Organizar os gráficos em uma tabela 2x2
+# grid.arrange(p1, p2, p3, p4, ncol = 2)
+# 
+
+# Filtrar os dados para o ano de 2022
+df_filtered <- df_Lula2_filteredMunic %>% filter(Ano == 2010)
+
+# Criar uma tabela de frequências para a quantidade de ocorrências por município
+freq_table <- df_filtered %>%
+  count(Localizacao_munic) %>%  # Conta quantas vezes cada município aparece
+  count(n)  # Conta quantas vezes cada contagem de município aparece
+
+# Gráfico de barras mostrando a quantidade de vezes que cada contagem de município ocorre
+p <- ggplot(freq_table, aes(x = factor(n), y = nn)) + 
+  geom_bar(stat = "identity") +
+  geom_text(aes(label = nn), vjust = -0.5) +  # Adiciona os números em cima das barras
+  labs(title = "Distribuição de Contagens por Município (Janela Lula2)",
+       x = "Quantidade de Municípios",
+       y = "Frequência") +
+  theme_minimal()
+
+# Exibir o gráfico
+
+# Filtrar os dados para o ano de 2022
+df_filtered_imed <- df_Lula2_filteredImed %>% filter(Ano == 2010)
+
+# Criar uma tabela de frequências para a quantidade de ocorrências por Região Imediata
+freq_table_imed <- df_filtered_imed %>%
+  count(Cod_Reg_Imediata) %>%  # Conta quantas vezes cada Região Imediata aparece
+  count(n)  # Conta quantas vezes cada contagem de Região Imediata aparece
+
+# Gráfico de barras mostrando a quantidade de vezes que cada contagem de Região Imediata ocorre
+p_imed <- ggplot(freq_table_imed, aes(x = factor(n), y = nn)) + 
+  geom_bar(stat = "identity") +
+  geom_text(aes(label = nn), vjust = -0.5) +  # Adiciona os números em cima das barras
+  labs(title = "Distribuição de Contagens por Reg. Imediata (Janela Lula2)",
+       x = "Quantidade de Regiões Imediatas",
+       y = "Frequência") +
+  theme_minimal()
+
+# Exibir o gráfico
+
+# Filtrar os dados para o ano de 2022
+df_filtered_intermed <- df_Lula2_filteredIntermed %>% filter(Ano == 2010)
+
+# Criar uma tabela de frequências para a quantidade de ocorrências por Região Intermediária
+freq_table_intermed <- df_filtered_intermed %>%
+  count(Cod_Reg_Intermed) %>%  # Conta quantas vezes cada Região Intermediária aparece
+  count(n)  # Conta quantas vezes cada contagem de Região Intermediária aparece
+
+# Gráfico de barras mostrando a quantidade de vezes que cada contagem de Região Intermediária ocorre
+p_intermed <- ggplot(freq_table_intermed, aes(x = factor(n), y = nn)) + 
+  geom_bar(stat = "identity") +
+  geom_text(aes(label = nn), vjust = -0.5) +  # Adiciona os números em cima das barras
+  labs(title = "Distribuição de Contagens por Reg. Inter. (Janela Lula2)",
+       x = "Quantidade de Regiões Intermediárias",
+       y = "Frequência") +
+  theme_minimal()
+
+
+# Gráfico 4: Contagem por Localização Intermediária
+p4 <- ggplot(df_Lula2_filteredUF %>% filter(Ano == 2010), aes(x = factor(Localizacao_UF))) +
+  geom_bar() +
+  geom_text(stat = 'count', aes(label = ..count..), vjust = -0.5) +
+  labs(title = "Contagem por Localização Estadual", x = "Localização Estadual", y = "Contagem") +
+  theme_minimal()
+
+grid.arrange(p, p_imed, p_intermed, p4, ncol = 2)
+
+```
+
+---
+
+### Rodando a regressão usando **Modelos Lineares Mistos** com 3 níveis (1 - Ano; 2 - Unidade de Negócio; 3 - Localização. 
+
+##Estão sendo utilizadas as seguintes variáveis de localização: **Estado, Região Intermediária, Região Imediata e Município**. 
+
+```{r, semRemoverOutlierDilma1}
+
+mod_Lula2_Munic <- lmer(SOBRAS_POR_ATIVO ~ Ano + (1 | Unidade_de_Negocio) + (1 | Localizacao_munic), data = df_Lula2_filteredMunic)
+summary(mod_Lula2_Munic)
+
+mod_Lula2_UF <- lmer(SOBRAS_POR_ATIVO ~ Ano + (1 | Unidade_de_Negocio) + (1 | Localizacao_UF) , data = df_Lula2_filteredUF)
+summary(mod_Lula2_UF)
+
+mod_Lula2_Inter <- lmer(SOBRAS_POR_ATIVO ~ Ano + (1 | Unidade_de_Negocio) + (1 | Localizacao_Inter), data = df_Lula2_filteredIntermed)
+summary(mod_Lula2_Inter)
+
+mod_Lula2_Imed <- lmer(SOBRAS_POR_ATIVO ~ Ano + (1 | Unidade_de_Negocio) + (1 | Localizacao_Imed), data = df_Lula2_filteredImed)
+summary(mod_Lula2_Imed)
+
+
+
+```
+
+```{r, paraTestar, echo=FALSE}
+mod_Lula2_Munic2 <- lmer(SOBRAS_POR_ATIVO ~ Ano + (1 | Unidade_de_Negocio) + (1 | Localizacao_munic), data = df_Lula2_filteredMunicLimpo$df_sem_outliers)
+#summary(mod_Lula2_Munic)
+
+mod_Lula2_UF2 <- lmer(SOBRAS_POR_ATIVO ~ Ano + (1 | Unidade_de_Negocio) + (1 | Localizacao_UF) , data = df_Lula2_filteredUFLimpo$df_sem_outliers)
+#summary(mod_Lula2_UF)
+
+mod_Lula2_Inter2 <- lmer(SOBRAS_POR_ATIVO ~ Ano + (1 | Unidade_de_Negocio) + (1 | Localizacao_Inter), data = df_Lula2_filteredInterLimpo$df_sem_outliers)
+#summary(mod_Lula2_Inter)
+
+mod_Lula2_Imed2 <- lmer(SOBRAS_POR_ATIVO ~ Ano + (1 | Unidade_de_Negocio) + (1 | Localizacao_Imed), data = df_Lula2_filteredImedLimpo$df_sem_outliers)
+#summary(mod_Lula2_Imed)
+
+
+```
+
+
+
+# Base de dados original e sem outlier com 3 desvios padrão
+```{r, echo=FALSE}
+
+library(grid)  # Necessário para usar grid.text
+library(gridExtra)  # Caso esteja usando grid.arrange
+library(cowplot)
+
+# Gerar gráficos de pizza para cada modelo
+plot_Munic <- plot_pizza_2D(mod_Lula2_Munic)
+plot_Imed <- plot_pizza_2D(mod_Lula2_Imed)
+plot_Inter <- plot_pizza_2D(mod_Lula2_Inter)
+plot_UF <- plot_pizza_2D(mod_Lula2_UF)
+
+plot_Munic2 <- plot_pizza_2D(mod_Lula2_Munic2)
+plot_Imed2 <- plot_pizza_2D(mod_Lula2_Imed2)
+plot_Inter2 <- plot_pizza_2D(mod_Lula2_Inter2)
+plot_UF2 <- plot_pizza_2D(mod_Lula2_UF2)
+
+
+
+# Organizar os gráficos lado a lado com plot_grid()
+plot_grid(plot_Munic, plot_Imed, plot_Inter, plot_UF, plot_Munic2, plot_Imed2, plot_Inter2, plot_UF2, ncol = 4)
+
+
+
+
+
+```
+
+
+## **Componentes de variância lado a lado para análise quantitativa entre os modelos**.
+```{r, echo=FALSE}
+# Executar a comparação com os 4 modelos
+models <- list(mod_Lula2_Munic, mod_Lula2_Imed, mod_Lula2_Inter ,mod_Lula2_UF )
+names <- c("Lula2 Munic", "Lula2 Imed", "Lula2 Inter", "Lula2 UF")
+
+comparison_table <- compare_variances(models, names)
+comparison_table
+```
+
+
+## **Comparando AIC e BIC para os modelos**
+```{r, echo=FALSE}
+
+model_comparison <- data.frame(
+  Model = c("Lula2 UF", "Lula2 Inter", "Lula2 Imed", "Lula2 Munic"),
+  AIC = c(AIC(mod_Lula2_UF), AIC(mod_Lula2_Inter), AIC(mod_Lula2_Imed), AIC(mod_Lula2_Munic)),
+  BIC = c(BIC(mod_Lula2_UF), BIC(mod_Lula2_Inter), BIC(mod_Lula2_Imed), BIC(mod_Lula2_Munic))
+)
+model_comparison
+
+```
+
+---
+
+## **Resumo estatístico da Janela Lula1:**
+```{r descricao_estatisticaLula1, echo=FALSE}
+est_munic <- calcular_estatisticas(df_Lula1_filteredMunic, "Janela Lula1 (Município >= 3)")
+est_imed <- calcular_estatisticas(df_Lula1_filteredImed, "Janela Lula1 (Reg. Imediata >= 5)")
+est_inter <- calcular_estatisticas(df_Lula1_filteredIntermed, "Janela Lula1 (Reg. Intermediária >= 5)")
+est_UF <- calcular_estatisticas(df_Lula1_filteredUF, "Janela Lula1 (Estado >= 5)")
+
+est_munic
+est_imed
+est_inter
+est_UF
+
+```
+
+### *Outliers identificados nas Janelas:*
+
+```{r outlierLula1, echo=FALSE}
+
+df_Lula1_filteredMunicLimpo <- remover_outliers_zscore(df_Lula1_filteredMunic, "SOBRAS_POR_ATIVO")
+
+df_sem_outliers_ZscoreLula1_Munic <- df_Lula1_filteredMunicLimpo$df_sem_outliers
+df_com_outliers_ZscoreLula1_Munic <- df_Lula1_filteredMunicLimpo$df_com_outliers
+
+# library(knitr)
+# library(kableExtra)
+
+# Exibir a tibble formatada com kable
+df_com_outliers_ZscoreLula1_Munic %>%
+  kable() %>%
+  kable_styling(full_width = FALSE)
+
+
+novo <- calcular_estatisticas(df_sem_outliers_ZscoreLula1_Munic, "Janela Lula1 (Z-score Município)")
+novo
+
+
+
+df_Lula1_filteredImedLimpo <- remover_outliers_zscore(df_Lula1_filteredImed, "SOBRAS_POR_ATIVO")
+
+df_sem_outliers_ZscoreLula1_Imed <- df_Lula1_filteredImedLimpo$df_sem_outliers
+df_com_outliers_ZscoreLula1_Imed <- df_Lula1_filteredImedLimpo$df_com_outliers
+
+df_com_outliers_ZscoreLula1_Imed %>%
+  kable() %>%
+  kable_styling(full_width = FALSE)
+
+
+novo <- calcular_estatisticas(df_sem_outliers_ZscoreLula1_Imed, "Janela Lula1 (Z-score Imediata)")
+novo
+
+
+df_Lula1_filteredInterLimpo <- remover_outliers_zscore(df_Lula1_filteredIntermed, "SOBRAS_POR_ATIVO")
+
+df_sem_outliers_ZscoreLula1_Inter <- df_Lula1_filteredInterLimpo$df_sem_outliers
+df_com_outliers_ZscoreLula1_Inter <- df_Lula1_filteredInterLimpo$df_com_outliers
+
+df_com_outliers_ZscoreLula1_Inter %>%
+  kable() %>%
+  kable_styling(full_width = FALSE)
+
+
+novo <- calcular_estatisticas(df_sem_outliers_ZscoreLula1_Inter, "Janela Lula1 (Z-score Inter)")
+novo
+
+
+df_Lula1_filteredUFLimpo <- remover_outliers_zscore(df_Lula1_filteredUF, "SOBRAS_POR_ATIVO")
+
+df_sem_outliers_ZscoreLula1_UF <- df_Lula1_filteredUFLimpo$df_sem_outliers
+df_com_outliers_ZscoreLula1_UF <- df_Lula1_filteredUFLimpo$df_com_outliers
+
+df_com_outliers_ZscoreLula1_UF %>%
+  kable() %>%
+  kable_styling(full_width = FALSE)
+
+
+novo <- calcular_estatisticas(df_sem_outliers_ZscoreLula1_UF, "Janela Lula1 (Z-score Estado)")
+novo
+
+
+
+```
+
+## Boxplot das Janelas Lula1
+```{r, echo=FALSE}
+
+# Criando os dois boxplots
+p1 <- ggplot(df_Lula1_filteredMunic, aes(y = SOBRAS_POR_ATIVO)) + 
+  geom_boxplot() + 
+  ggtitle("Todos dados da Janela Lula1 - Municípios ")+
+  theme(plot.title = element_text(hjust = 0.5))
+
+p2 <- ggplot(df_Lula1_filteredMunicLimpo$df_sem_outliers, aes(y = SOBRAS_POR_ATIVO)) + 
+  geom_boxplot() + 
+  ggtitle("Janela Lula1 - Municípios \nsem outliers a 3 desvios padrão") +
+  theme(plot.title = element_text(hjust = 0.5))
+
+# Exibindo os gráficos lado a lado
+grid.arrange(p1, p2, ncol = 2)
+
+
+# Criando os dois boxplots
+p1 <- ggplot(df_Lula1_filteredImed, aes(y = SOBRAS_POR_ATIVO)) + 
+  geom_boxplot() + 
+  ggtitle("Todos as dados da Janela Lula1 \nRegião Imediata ")+
+  theme(plot.title = element_text(hjust = 0.5))
+
+p2 <- ggplot(df_Lula1_filteredImedLimpo$df_sem_outliers, aes(y = SOBRAS_POR_ATIVO)) + 
+  geom_boxplot() + 
+  ggtitle("Janela Lula1 - Reg. Imediata \nsem Outliers a 3 desvios padrão")+
+  theme(plot.title = element_text(hjust = 0.5))
+
+# Exibindo os gráficos lado a lado
+grid.arrange(p1, p2, ncol = 2)
+
+
+# Criando os dois boxplots
+p1 <- ggplot(df_Lula1_filteredIntermed, aes(y = SOBRAS_POR_ATIVO)) + 
+  geom_boxplot() + 
+  ggtitle("Todos as dados da Janela Lula1 \nRegião Intermediária")+
+  theme(plot.title = element_text(hjust = 0.5))
+
+p2 <- ggplot(df_Lula1_filteredInterLimpo$df_sem_outliers, aes(y = SOBRAS_POR_ATIVO)) + 
+  geom_boxplot() + 
+  ggtitle("Reg. Int. da Janela Lula1 \nsem Outliers a 3 desvios padrão")+
+  theme(plot.title = element_text(hjust = 0.5))
+
+# Exibindo os gráficos lado a lado
+grid.arrange(p1, p2, ncol = 2)
+
+
+# Criando os dois boxplots
+p1 <- ggplot(df_Lula1_filteredUF, aes(y = SOBRAS_POR_ATIVO)) + 
+  geom_boxplot() + 
+  ggtitle("Todos as dados da Janela Lula1 \nEstado")+
+  theme(plot.title = element_text(hjust = 0.5))
+
+p2 <- ggplot(df_Lula1_filteredUFLimpo$df_sem_outliers, aes(y = SOBRAS_POR_ATIVO)) + 
+  geom_boxplot() + 
+  ggtitle("Estados da Janela Lula1\nsem Outliers a 3 desvios padrão (-1)")+
+  theme(plot.title = element_text(hjust = 0.5))
+
+# Exibindo os gráficos lado a lado
+grid.arrange(p1, p2, ncol = 2)
+
+
+```
+
+
+```{r, echo=FALSE, message=FALSE, warning=FALSE, fig.width=10, fig.height=8}
+# Carregar a biblioteca necessária
+library(ggplot2)
+library(gridExtra)
+
+# Gráfico 1: Contagem por Localização Município
+# p1 <- ggplot(df_Bolsonado_filteredMunic %>% filter(Ano == 2022), aes(x = factor(Localizacao_munic))) +
+#   geom_bar() +
+#   geom_text(stat = 'count', aes(label = ..count..), vjust = -0.5) + 
+#   labs(title = "Contagem por Localização Município", x = "Município", y = "Contagem") +
+#   theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+#   theme_minimal()
+
+# p1 <- ggplot(df_Bolsonado_filteredMunic %>% filter(Ano == 2022), 
+#              aes(x = factor(Localizacao_munic))) +
+#   geom_bar() +
+#   geom_text(stat = 'count', aes(label = ..count..), vjust = -0.5) +  # Aumenta o valor de vjust para posicionar melhor os números
+#   labs(title = "Contagem por Localização Município (Ano: 2022)", x = "Município", y = "Contagem") +
+#   theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+#   theme_minimal()
+# 
+# 
+# # Gráfico 2: Contagem por Estado (UF)
+# p2 <- ggplot(df_Bolsonado_filteredImed %>% filter(Ano == 2022), aes(x = factor(Localizacao_Imed))) +
+#   geom_bar() +
+#   geom_text(stat = 'count', aes(label = ..count..), vjust = -0.5) + 
+#   labs(title = "Contagem por Estado (UF)", x = "Estado (UF)", y = "Contagem") +
+#   theme_minimal()
+# 
+# # Gráfico 3: Contagem por Localização Imediata
+# p3 <- ggplot(df_Bolsonado_filteredIntermed %>% filter(Ano == 2022), aes(x = factor(Localizacao_Inter))) +
+#   geom_bar() +
+#   geom_text(stat = 'count', aes(label = ..count..), vjust = -0.5) + 
+#   labs(title = "Contagem por Localização Imediata", x = "Localização Imediata", y = "Contagem") +
+#   theme_minimal()
+# 
+# 
+# # Gráfico 4: Contagem por Localização Intermediária
+# p4 <- ggplot(df_Bolsonado_filteredUF %>% filter(Ano == 2022), aes(x = factor(Localizacao_UF))) +
+#   geom_bar() +
+#   geom_text(stat = 'count', aes(label = ..count..), vjust = -0.5) + 
+#   labs(title = "Contagem por Localização Intermediária", x = "Localização Intermediária", y = "Contagem") +
+#   theme_minimal()
+# 
+# 
+# # Organizar os gráficos em uma tabela 2x2
+# grid.arrange(p1, p2, p3, p4, ncol = 2)
+# 
+
+# Filtrar os dados para o ano de 2022
+df_filtered <- df_Lula1_filteredMunic %>% filter(Ano == 2006)
+
+# Criar uma tabela de frequências para a quantidade de ocorrências por município
+freq_table <- df_filtered %>%
+  count(Localizacao_munic) %>%  # Conta quantas vezes cada município aparece
+  count(n)  # Conta quantas vezes cada contagem de município aparece
+
+# Gráfico de barras mostrando a quantidade de vezes que cada contagem de município ocorre
+p <- ggplot(freq_table, aes(x = factor(n), y = nn)) + 
+  geom_bar(stat = "identity") +
+  geom_text(aes(label = nn), vjust = -0.5) +  # Adiciona os números em cima das barras
+  labs(title = "Distribuição de Contagens por Município (Janela Lula1)",
+       x = "Quantidade de Municípios",
+       y = "Frequência") +
+  theme_minimal()
+
+# Exibir o gráfico
+
+# Filtrar os dados para o ano de 2022
+df_filtered_imed <- df_Lula1_filteredImed %>% filter(Ano == 2006)
+
+# Criar uma tabela de frequências para a quantidade de ocorrências por Região Imediata
+freq_table_imed <- df_filtered_imed %>%
+  count(Cod_Reg_Imediata) %>%  # Conta quantas vezes cada Região Imediata aparece
+  count(n)  # Conta quantas vezes cada contagem de Região Imediata aparece
+
+# Gráfico de barras mostrando a quantidade de vezes que cada contagem de Região Imediata ocorre
+p_imed <- ggplot(freq_table_imed, aes(x = factor(n), y = nn)) + 
+  geom_bar(stat = "identity") +
+  geom_text(aes(label = nn), vjust = -0.5) +  # Adiciona os números em cima das barras
+  labs(title = "Distribuição de Contagens por Reg. Imediata (Janela Lula1)",
+       x = "Quantidade de Regiões Imediatas",
+       y = "Frequência") +
+  theme_minimal()
+
+# Exibir o gráfico
+
+# Filtrar os dados para o ano de 2022
+df_filtered_intermed <- df_Lula1_filteredIntermed %>% filter(Ano == 2006)
+
+# Criar uma tabela de frequências para a quantidade de ocorrências por Região Intermediária
+freq_table_intermed <- df_filtered_intermed %>%
+  count(Cod_Reg_Intermed) %>%  # Conta quantas vezes cada Região Intermediária aparece
+  count(n)  # Conta quantas vezes cada contagem de Região Intermediária aparece
+
+# Gráfico de barras mostrando a quantidade de vezes que cada contagem de Região Intermediária ocorre
+p_intermed <- ggplot(freq_table_intermed, aes(x = factor(n), y = nn)) + 
+  geom_bar(stat = "identity") +
+  geom_text(aes(label = nn), vjust = -0.5) +  # Adiciona os números em cima das barras
+  labs(title = "Distribuição de Contagens por Reg. Inter. (Janela Lula1)",
+       x = "Quantidade de Regiões Intermediárias",
+       y = "Frequência") +
+  theme_minimal()
+
+
+# Gráfico 4: Contagem por Localização Intermediária
+p4 <- ggplot(df_Lula1_filteredUF %>% filter(Ano == 2006), aes(x = factor(Localizacao_UF))) +
+  geom_bar() +
+  geom_text(stat = 'count', aes(label = ..count..), vjust = -0.5) +
+  labs(title = "Contagem por Localização Estadual", x = "Localização Estadual", y = "Contagem") +
+  theme_minimal()
+
+grid.arrange(p, p_imed, p_intermed, p4, ncol = 2)
+
+```
+
+---
+
+### Rodando a regressão usando **Modelos Lineares Mistos** com 3 níveis (1 - Ano; 2 - Unidade de Negócio; 3 - Localização. 
+
+##Estão sendo utilizadas as seguintes variáveis de localização: **Estado, Região Intermediária, Região Imediata e Município**. 
+
+```{r, semRemoverOutlierLula1}
+
+mod_Lula1_Munic <- lmer(SOBRAS_POR_ATIVO ~ Ano + (1 | Unidade_de_Negocio) + (1 | Localizacao_munic), data = df_Lula1_filteredMunic)
+summary(mod_Lula1_Munic)
+
+mod_Lula1_UF <- lmer(SOBRAS_POR_ATIVO ~ Ano + (1 | Unidade_de_Negocio) + (1 | Localizacao_UF) , data = df_Lula1_filteredUF)
+summary(mod_Lula1_UF)
+
+mod_Lula1_Inter <- lmer(SOBRAS_POR_ATIVO ~ Ano + (1 | Unidade_de_Negocio) + (1 | Localizacao_Inter), data = df_Lula1_filteredIntermed)
+summary(mod_Lula1_Inter)
+
+mod_Lula1_Imed <- lmer(SOBRAS_POR_ATIVO ~ Ano + (1 | Unidade_de_Negocio) + (1 | Localizacao_Imed), data = df_Lula1_filteredImed)
+summary(mod_Lula1_Imed)
+
+
+
+```
+
+```{r, paraTestar1, echo=FALSE}
+mod_Lula1_Munic2 <- lmer(SOBRAS_POR_ATIVO ~ Ano + (1 | Unidade_de_Negocio) + (1 | Localizacao_munic), data = df_Lula1_filteredMunicLimpo$df_sem_outliers)
+#summary(mod_Lula2_Munic)
+
+mod_Lula1_UF2 <- lmer(SOBRAS_POR_ATIVO ~ Ano + (1 | Unidade_de_Negocio) + (1 | Localizacao_UF) , data = df_Lula1_filteredUFLimpo$df_sem_outliers)
+#summary(mod_Lula2_UF)
+
+mod_Lula1_Inter2 <- lmer(SOBRAS_POR_ATIVO ~ Ano + (1 | Unidade_de_Negocio) + (1 | Localizacao_Inter), data = df_Lula1_filteredInterLimpo$df_sem_outliers)
+#summary(mod_Lula2_Inter)
+
+mod_Lula1_Imed2 <- lmer(SOBRAS_POR_ATIVO ~ Ano + (1 | Unidade_de_Negocio) + (1 | Localizacao_Imed), data = df_Lula1_filteredImedLimpo$df_sem_outliers)
+#summary(mod_Lula2_Imed)
+
+
+```
+
+
+
+# Base de dados original e sem outlier com 3 desvios padrão
+```{r, echo=FALSE}
+
+library(grid)  # Necessário para usar grid.text
+library(gridExtra)  # Caso esteja usando grid.arrange
+library(cowplot)
+
+# Gerar gráficos de pizza para cada modelo
+plot_Munic <- plot_pizza_2D(mod_Lula1_Munic)
+plot_Imed <- plot_pizza_2D(mod_Lula1_Imed)
+plot_Inter <- plot_pizza_2D(mod_Lula1_Inter)
+plot_UF <- plot_pizza_2D(mod_Lula1_UF)
+
+plot_Munic2 <- plot_pizza_2D(mod_Lula1_Munic2)
+plot_Imed2 <- plot_pizza_2D(mod_Lula1_Imed2)
+plot_Inter2 <- plot_pizza_2D(mod_Lula1_Inter2)
+plot_UF2 <- plot_pizza_2D(mod_Lula1_UF2)
+
+
+
+# Organizar os gráficos lado a lado com plot_grid()
+plot_grid(plot_Munic, plot_Imed, plot_Inter, plot_UF, plot_Munic2, plot_Imed2, plot_Inter2, plot_UF2, ncol = 4)
+
+
+
+
+
+```
+
+
+## **Componentes de variância lado a lado para análise quantitativa entre os modelos**.
+```{r, echo=FALSE}
+# Executar a comparação com os 4 modelos
+models <- list(mod_Lula1_Munic, mod_Lula1_Imed, mod_Lula1_Inter ,mod_Lula1_UF )
+names <- c("Lula1 Munic", "Lula1 Imed", "Lula1 Inter", "Lula1 UF")
+
+comparison_table <- compare_variances(models, names)
+comparison_table
+```
+
+
+## **Comparando AIC e BIC para os modelos**
+```{r, echo=FALSE}
+
+model_comparison <- data.frame(
+  Model = c("Lula1 UF", "Lula1 Inter", "Lula1 Imed", "Lula1 Munic"),
+  AIC = c(AIC(mod_Lula1_UF), AIC(mod_Lula1_Inter), AIC(mod_Lula1_Imed), AIC(mod_Lula1_Munic)),
+  BIC = c(BIC(mod_Lula1_UF), BIC(mod_Lula1_Inter), BIC(mod_Lula1_Imed), BIC(mod_Lula1_Munic))
+)
+model_comparison
+
+```
+
+---
+
+## **Resumo estatístico da Janela FHC2:**
+```{r descricao_estatisticaFHC2, echo=FALSE}
+est_munic <- calcular_estatisticas(df_FHC2_filteredMunic, "Janela FHC2 (Município >= 3)")
+est_imed <- calcular_estatisticas(df_FHC2_filteredImed, "Janela FHC2 (Reg. Imediata >= 5)")
+est_inter <- calcular_estatisticas(df_FHC2_filteredIntermed, "Janela FHC2 (Reg. Intermediária >= 5)")
+est_UF <- calcular_estatisticas(df_FHC2_filteredUF, "Janela FHC2 (Estado >= 5)")
+
+est_munic
+est_imed
+est_inter
+est_UF
+
+```
+
+### *Outliers identificados nas Janelas:*
+
+```{r outlierFHC2, echo=FALSE}
+
+df_FHC2_filteredMunicLimpo <- remover_outliers_zscore(df_FHC2_filteredMunic, "SOBRAS_POR_ATIVO")
+
+df_sem_outliers_ZscoreFHC2_Munic <- df_FHC2_filteredMunicLimpo$df_sem_outliers
+df_com_outliers_ZscoreFHC2_Munic <- df_FHC2_filteredMunicLimpo$df_com_outliers
+
+# library(knitr)
+# library(kableExtra)
+
+# Exibir a tibble formatada com kable
+df_com_outliers_ZscoreFHC2_Munic %>%
+  kable() %>%
+  kable_styling(full_width = FALSE)
+
+
+novo <- calcular_estatisticas(df_sem_outliers_ZscoreFHC2_Munic, "Janela FHC2 (Z-score Município)")
+novo
+
+
+
+df_FHC2_filteredImedLimpo <- remover_outliers_zscore(df_FHC2_filteredImed, "SOBRAS_POR_ATIVO")
+
+df_sem_outliers_ZscoreFHC2_Imed <- df_FHC2_filteredImedLimpo$df_sem_outliers
+df_com_outliers_ZscoreFHC2_Imed <- df_FHC2_filteredImedLimpo$df_com_outliers
+
+df_com_outliers_ZscoreFHC2_Imed %>%
+  kable() %>%
+  kable_styling(full_width = FALSE)
+
+
+novo <- calcular_estatisticas(df_sem_outliers_ZscoreFHC2_Imed, "Janela FHC2 (Z-score Imediata)")
+novo
+
+
+df_FHC2_filteredInterLimpo <- remover_outliers_zscore(df_FHC2_filteredIntermed, "SOBRAS_POR_ATIVO")
+
+df_sem_outliers_ZscoreFHC2_Inter <- df_FHC2_filteredInterLimpo$df_sem_outliers
+df_com_outliers_ZscoreFHC2_Inter <- df_FHC2_filteredInterLimpo$df_com_outliers
+
+df_com_outliers_ZscoreFHC2_Inter %>%
+  kable() %>%
+  kable_styling(full_width = FALSE)
+
+
+novo <- calcular_estatisticas(df_sem_outliers_ZscoreFHC2_Inter, "Janela FHC2 (Z-score Inter)")
+novo
+
+
+df_FHC2_filteredUFLimpo <- remover_outliers_zscore(df_FHC2_filteredUF, "SOBRAS_POR_ATIVO")
+
+df_sem_outliers_ZscoreFHC2_UF <- df_FHC2_filteredUFLimpo$df_sem_outliers
+df_com_outliers_ZscoreFHC2_UF <- df_FHC2_filteredUFLimpo$df_com_outliers
+
+df_com_outliers_ZscoreFHC2_UF %>%
+  kable() %>%
+  kable_styling(full_width = FALSE)
+
+
+novo <- calcular_estatisticas(df_sem_outliers_ZscoreFHC2_UF, "Janela FHC2 (Z-score Estado)")
+novo
+
+
+
+```
+
+## Boxplot das Janelas FHC2
+```{r, echo=FALSE}
+
+# Criando os dois boxplots
+p1 <- ggplot(df_FHC2_filteredMunic, aes(y = SOBRAS_POR_ATIVO)) + 
+  geom_boxplot() + 
+  ggtitle("Todos dados da Janela FHC2 - Municípios ")+
+  theme(plot.title = element_text(hjust = 0.5))
+
+p2 <- ggplot(df_FHC2_filteredMunicLimpo$df_sem_outliers, aes(y = SOBRAS_POR_ATIVO)) + 
+  geom_boxplot() + 
+  ggtitle("Janela FHC2 - Municípios \nsem outliers a 3 desvios padrão") +
+  theme(plot.title = element_text(hjust = 0.5))
+
+# Exibindo os gráficos lado a lado
+grid.arrange(p1, p2, ncol = 2)
+
+
+# Criando os dois boxplots
+p1 <- ggplot(df_FHC2_filteredImed, aes(y = SOBRAS_POR_ATIVO)) + 
+  geom_boxplot() + 
+  ggtitle("Todos as dados da Janela FHC2 \nRegião Imediata ")+
+  theme(plot.title = element_text(hjust = 0.5))
+
+p2 <- ggplot(df_FHC2_filteredImedLimpo$df_sem_outliers, aes(y = SOBRAS_POR_ATIVO)) + 
+  geom_boxplot() + 
+  ggtitle("Janela FHC2 - Reg. Imediata \nsem Outliers a 3 desvios padrão")+
+  theme(plot.title = element_text(hjust = 0.5))
+
+# Exibindo os gráficos lado a lado
+grid.arrange(p1, p2, ncol = 2)
+
+
+# Criando os dois boxplots
+p1 <- ggplot(df_FHC2_filteredIntermed, aes(y = SOBRAS_POR_ATIVO)) + 
+  geom_boxplot() + 
+  ggtitle("Todos as dados da Janela FHC2 \nRegião Intermediária")+
+  theme(plot.title = element_text(hjust = 0.5))
+
+p2 <- ggplot(df_FHC2_filteredInterLimpo$df_sem_outliers, aes(y = SOBRAS_POR_ATIVO)) + 
+  geom_boxplot() + 
+  ggtitle("Reg. Int. da Janela FHC2 \nsem Outliers a 3 desvios padrão")+
+  theme(plot.title = element_text(hjust = 0.5))
+
+# Exibindo os gráficos lado a lado
+grid.arrange(p1, p2, ncol = 2)
+
+
+# Criando os dois boxplots
+p1 <- ggplot(df_FHC2_filteredUF, aes(y = SOBRAS_POR_ATIVO)) + 
+  geom_boxplot() + 
+  ggtitle("Todos as dados da Janela FHC2 \nEstado")+
+  theme(plot.title = element_text(hjust = 0.5))
+
+p2 <- ggplot(df_FHC2_filteredUFLimpo$df_sem_outliers, aes(y = SOBRAS_POR_ATIVO)) + 
+  geom_boxplot() + 
+  ggtitle("Estados da Janela FHC2\nsem Outliers a 3 desvios padrão (-1)")+
+  theme(plot.title = element_text(hjust = 0.5))
+
+# Exibindo os gráficos lado a lado
+grid.arrange(p1, p2, ncol = 2)
+
+
+```
+
+
+```{r, echo=FALSE, message=FALSE, warning=FALSE, fig.width=10, fig.height=8}
+# Carregar a biblioteca necessária
+library(ggplot2)
+library(gridExtra)
+
+# Gráfico 1: Contagem por Localização Município
+# p1 <- ggplot(df_Bolsonado_filteredMunic %>% filter(Ano == 2022), aes(x = factor(Localizacao_munic))) +
+#   geom_bar() +
+#   geom_text(stat = 'count', aes(label = ..count..), vjust = -0.5) + 
+#   labs(title = "Contagem por Localização Município", x = "Município", y = "Contagem") +
+#   theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+#   theme_minimal()
+
+# p1 <- ggplot(df_Bolsonado_filteredMunic %>% filter(Ano == 2022), 
+#              aes(x = factor(Localizacao_munic))) +
+#   geom_bar() +
+#   geom_text(stat = 'count', aes(label = ..count..), vjust = -0.5) +  # Aumenta o valor de vjust para posicionar melhor os números
+#   labs(title = "Contagem por Localização Município (Ano: 2022)", x = "Município", y = "Contagem") +
+#   theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+#   theme_minimal()
+# 
+# 
+# # Gráfico 2: Contagem por Estado (UF)
+# p2 <- ggplot(df_Bolsonado_filteredImed %>% filter(Ano == 2022), aes(x = factor(Localizacao_Imed))) +
+#   geom_bar() +
+#   geom_text(stat = 'count', aes(label = ..count..), vjust = -0.5) + 
+#   labs(title = "Contagem por Estado (UF)", x = "Estado (UF)", y = "Contagem") +
+#   theme_minimal()
+# 
+# # Gráfico 3: Contagem por Localização Imediata
+# p3 <- ggplot(df_Bolsonado_filteredIntermed %>% filter(Ano == 2022), aes(x = factor(Localizacao_Inter))) +
+#   geom_bar() +
+#   geom_text(stat = 'count', aes(label = ..count..), vjust = -0.5) + 
+#   labs(title = "Contagem por Localização Imediata", x = "Localização Imediata", y = "Contagem") +
+#   theme_minimal()
+# 
+# 
+# # Gráfico 4: Contagem por Localização Intermediária
+# p4 <- ggplot(df_Bolsonado_filteredUF %>% filter(Ano == 2022), aes(x = factor(Localizacao_UF))) +
+#   geom_bar() +
+#   geom_text(stat = 'count', aes(label = ..count..), vjust = -0.5) + 
+#   labs(title = "Contagem por Localização Intermediária", x = "Localização Intermediária", y = "Contagem") +
+#   theme_minimal()
+# 
+# 
+# # Organizar os gráficos em uma tabela 2x2
+# grid.arrange(p1, p2, p3, p4, ncol = 2)
+# 
+
+# Filtrar os dados para o ano de 2022
+df_filtered <- df_FHC2_filteredMunic %>% filter(Ano == 2002)
+
+# Criar uma tabela de frequências para a quantidade de ocorrências por município
+freq_table <- df_filtered %>%
+  count(Localizacao_munic) %>%  # Conta quantas vezes cada município aparece
+  count(n)  # Conta quantas vezes cada contagem de município aparece
+
+# Gráfico de barras mostrando a quantidade de vezes que cada contagem de município ocorre
+p <- ggplot(freq_table, aes(x = factor(n), y = nn)) + 
+  geom_bar(stat = "identity") +
+  geom_text(aes(label = nn), vjust = -0.5) +  # Adiciona os números em cima das barras
+  labs(title = "Distribuição de Contagens por Município (Janela FHC2)",
+       x = "Quantidade de Municípios",
+       y = "Frequência") +
+  theme_minimal()
+
+# Exibir o gráfico
+
+# Filtrar os dados para o ano de 2022
+df_filtered_imed <- df_FHC2_filteredImed %>% filter(Ano == 2002)
+
+# Criar uma tabela de frequências para a quantidade de ocorrências por Região Imediata
+freq_table_imed <- df_filtered_imed %>%
+  count(Cod_Reg_Imediata) %>%  # Conta quantas vezes cada Região Imediata aparece
+  count(n)  # Conta quantas vezes cada contagem de Região Imediata aparece
+
+# Gráfico de barras mostrando a quantidade de vezes que cada contagem de Região Imediata ocorre
+p_imed <- ggplot(freq_table_imed, aes(x = factor(n), y = nn)) + 
+  geom_bar(stat = "identity") +
+  geom_text(aes(label = nn), vjust = -0.5) +  # Adiciona os números em cima das barras
+  labs(title = "Distribuição de Contagens por Reg. Imediata (Janela FHC2)",
+       x = "Quantidade de Regiões Imediatas",
+       y = "Frequência") +
+  theme_minimal()
+
+# Exibir o gráfico
+
+# Filtrar os dados para o ano de 2022
+df_filtered_intermed <- df_FHC2_filteredIntermed %>% filter(Ano == 2002)
+
+# Criar uma tabela de frequências para a quantidade de ocorrências por Região Intermediária
+freq_table_intermed <- df_filtered_intermed %>%
+  count(Cod_Reg_Intermed) %>%  # Conta quantas vezes cada Região Intermediária aparece
+  count(n)  # Conta quantas vezes cada contagem de Região Intermediária aparece
+
+# Gráfico de barras mostrando a quantidade de vezes que cada contagem de Região Intermediária ocorre
+p_intermed <- ggplot(freq_table_intermed, aes(x = factor(n), y = nn)) + 
+  geom_bar(stat = "identity") +
+  geom_text(aes(label = nn), vjust = -0.5) +  # Adiciona os números em cima das barras
+  labs(title = "Distribuição de Contagens por Reg. Inter. (Janela FHC2)",
+       x = "Quantidade de Regiões Intermediárias",
+       y = "Frequência") +
+  theme_minimal()
+
+
+# Gráfico 4: Contagem por Localização Intermediária
+p4 <- ggplot(df_FHC2_filteredUF %>% filter(Ano == 2002), aes(x = factor(Localizacao_UF))) +
+  geom_bar() +
+  geom_text(stat = 'count', aes(label = ..count..), vjust = -0.5) +
+  labs(title = "Contagem por Localização Estadual", x = "Localização Estadual", y = "Contagem") +
+  theme_minimal()
+
+grid.arrange(p, p_imed, p_intermed, p4, ncol = 2)
+
+```
+
+---
+
+### Rodando a regressão usando **Modelos Lineares Mistos** com 3 níveis (1 - Ano; 2 - Unidade de Negócio; 3 - Localização. 
+
+##Estão sendo utilizadas as seguintes variáveis de localização: **Estado, Região Intermediária, Região Imediata e Município**. 
+
+```{r, semRemoverOutlierFHC2}
+
+mod_FHC2_Munic <- lmer(SOBRAS_POR_ATIVO ~ Ano + (1 | Unidade_de_Negocio) + (1 | Localizacao_munic), data = df_FHC2_filteredMunic)
+summary(mod_FHC2_Munic)
+
+mod_FHC2_UF <- lmer(SOBRAS_POR_ATIVO ~ Ano + (1 | Unidade_de_Negocio) + (1 | Localizacao_UF) , data = df_FHC2_filteredUF)
+summary(mod_FHC2_UF)
+
+mod_FHC2_Inter <- lmer(SOBRAS_POR_ATIVO ~ Ano + (1 | Unidade_de_Negocio) + (1 | Localizacao_Inter), data = df_FHC2_filteredIntermed)
+summary(mod_FHC2_Inter)
+
+mod_FHC2_Imed <- lmer(SOBRAS_POR_ATIVO ~ Ano + (1 | Unidade_de_Negocio) + (1 | Localizacao_Imed), data = df_FHC2_filteredImed)
+summary(mod_FHC2_Imed)
+
+
+
+```
+
+```{r, paraTestar2, echo=FALSE}
+mod_FHC2_Munic2 <- lmer(SOBRAS_POR_ATIVO ~ Ano + (1 | Unidade_de_Negocio) + (1 | Localizacao_munic), data = df_FHC2_filteredMunicLimpo$df_sem_outliers)
+#summary(mod_Lula2_Munic)
+
+mod_FHC2_UF2 <- lmer(SOBRAS_POR_ATIVO ~ Ano + (1 | Unidade_de_Negocio) + (1 | Localizacao_UF) , data = df_FHC2_filteredUFLimpo$df_sem_outliers)
+#summary(mod_Lula2_UF)
+
+mod_FHC2_Inter2 <- lmer(SOBRAS_POR_ATIVO ~ Ano + (1 | Unidade_de_Negocio) + (1 | Localizacao_Inter), data = df_FHC2_filteredInterLimpo$df_sem_outliers)
+#summary(mod_Lula2_Inter)
+
+mod_FHC2_Imed2 <- lmer(SOBRAS_POR_ATIVO ~ Ano + (1 | Unidade_de_Negocio) + (1 | Localizacao_Imed), data = df_FHC2_filteredImedLimpo$df_sem_outliers)
+#summary(mod_Lula2_Imed)
+
+
+```
+
+
+
+# Base de dados original e sem outlier com 3 desvios padrão
+```{r, echo=FALSE}
+
+library(grid)  # Necessário para usar grid.text
+library(gridExtra)  # Caso esteja usando grid.arrange
+library(cowplot)
+
+# Gerar gráficos de pizza para cada modelo
+plot_Munic <- plot_pizza_2D(mod_FHC2_Munic)
+plot_Imed <- plot_pizza_2D(mod_FHC2_Imed)
+plot_Inter <- plot_pizza_2D(mod_FHC2_Inter)
+plot_UF <- plot_pizza_2D(mod_FHC2_UF)
+
+plot_Munic2 <- plot_pizza_2D(mod_FHC2_Munic2)
+plot_Imed2 <- plot_pizza_2D(mod_FHC2_Imed2)
+plot_Inter2 <- plot_pizza_2D(mod_FHC2_Inter2)
+plot_UF2 <- plot_pizza_2D(mod_FHC2_UF2)
+
+
+
+# Organizar os gráficos lado a lado com plot_grid()
+plot_grid(plot_Munic, plot_Imed, plot_Inter, plot_UF, plot_Munic2, plot_Imed2, plot_Inter2, plot_UF2, ncol = 4)
+
+
+
+
+
+```
+
+
+## **Componentes de variância lado a lado para análise quantitativa entre os modelos**.
+```{r, echo=FALSE}
+# Executar a comparação com os 4 modelos
+models <- list(mod_FHC2_Munic, mod_FHC2_Imed, mod_FHC2_Inter ,mod_FHC2_UF )
+names <- c("FHC2 Munic", "FHC2 Imed", "FHC2 Inter", "FHC2 UF")
+
+comparison_table <- compare_variances(models, names)
+comparison_table
+```
+
+
+## **Comparando AIC e BIC para os modelos**
+```{r, echo=FALSE}
+
+model_comparison <- data.frame(
+  Model = c("FHC2 UF", "FHC2 Inter", "FHC2 Imed", "FHC2 Munic"),
+  AIC = c(AIC(mod_FHC2_UF), AIC(mod_FHC2_Inter), AIC(mod_FHC2_Imed), AIC(mod_FHC2_Munic)),
+  BIC = c(BIC(mod_FHC2_UF), BIC(mod_FHC2_Inter), BIC(mod_FHC2_Imed), BIC(mod_FHC2_Munic))
+)
+model_comparison
+
+```
+
+---
+
+## **Resumo estatístico da Janela FHC1:**
+```{r descricao_estatisticaFHC1, echo=FALSE}
+est_munic <- calcular_estatisticas(df_FHC1_filteredMunic, "Janela FHC1 (Município >= 3)")
+est_imed <- calcular_estatisticas(df_FHC1_filteredImed, "Janela FHC1 (Reg. Imediata >= 5)")
+est_inter <- calcular_estatisticas(df_FHC1_filteredIntermed, "Janela FHC1 (Reg. Intermediária >= 5)")
+est_UF <- calcular_estatisticas(df_FHC1_filteredUF, "Janela FHC1 (Estado >= 5)")
+
+est_munic
+est_imed
+est_inter
+est_UF
+
+```
+
+### *Outliers identificados nas Janelas:*
+
+```{r outlierFHC1, echo=FALSE}
+
+df_FHC1_filteredMunicLimpo <- remover_outliers_zscore(df_FHC1_filteredMunic, "SOBRAS_POR_ATIVO")
+
+df_sem_outliers_ZscoreFHC1_Munic <- df_FHC1_filteredMunicLimpo$df_sem_outliers
+df_com_outliers_ZscoreFHC1_Munic <- df_FHC1_filteredMunicLimpo$df_com_outliers
+
+# Exibir a tibble formatada com kable
+df_com_outliers_ZscoreFHC1_Munic %>%
+  kable() %>%
+  kable_styling(full_width = FALSE)
+
+novo <- calcular_estatisticas(df_sem_outliers_ZscoreFHC1_Munic, "Janela FHC1 (Z-score Município)")
+novo
+
+df_FHC1_filteredMunicLimpo10DP <- remover_outliers_zscore(df_FHC1_filteredMunic, "SOBRAS_POR_ATIVO", threshold = 6)
+novo <- calcular_estatisticas(df_FHC1_filteredMunicLimpo10DP$df_sem_outliers, "Janela FHC1 (Z-score Município)")
+novo
+
+
+df_FHC1_filteredImedLimpo <- remover_outliers_zscore(df_FHC1_filteredImed, "SOBRAS_POR_ATIVO")
+
+df_sem_outliers_ZscoreFHC1_Imed <- df_FHC1_filteredImedLimpo$df_sem_outliers
+df_com_outliers_ZscoreFHC1_Imed <- df_FHC1_filteredImedLimpo$df_com_outliers
+
+df_com_outliers_ZscoreFHC1_Imed %>%
+  kable() %>%
+  kable_styling(full_width = FALSE)
+
+
+novo <- calcular_estatisticas(df_sem_outliers_ZscoreFHC2_Imed, "Janela FHC1 (Z-score Imediata)")
+novo
+
+
+df_FHC1_filteredImedLimpo10DP <- remover_outliers_zscore(df_FHC1_filteredImed, "SOBRAS_POR_ATIVO", threshold = 6)
+novo <- calcular_estatisticas(df_FHC1_filteredImedLimpo10DP$df_sem_outliers, "Janela FHC1 (Z-score Município)")
+novo
+
+
+
+
+df_FHC1_filteredInterLimpo <- remover_outliers_zscore(df_FHC1_filteredIntermed, "SOBRAS_POR_ATIVO")
+
+df_sem_outliers_ZscoreFHC1_Inter <- df_FHC1_filteredInterLimpo$df_sem_outliers
+df_com_outliers_ZscoreFHC1_Inter <- df_FHC1_filteredInterLimpo$df_com_outliers
+
+df_com_outliers_ZscoreFHC1_Inter %>%
+  kable() %>%
+  kable_styling(full_width = FALSE)
+
+
+novo <- calcular_estatisticas(df_sem_outliers_ZscoreFHC1_Inter, "Janela FHC1 (Z-score Inter)")
+novo
+
+df_FHC1_filteredInterLimpo10DP <- remover_outliers_zscore(df_FHC1_filteredIntermed, "SOBRAS_POR_ATIVO", threshold = 6)
+novo <- calcular_estatisticas(df_FHC1_filteredInterLimpo10DP$df_sem_outliers, "Janela FHC1 (Z-score Município)")
+novo
+
+
+
+df_FHC1_filteredUFLimpo <- remover_outliers_zscore(df_FHC1_filteredUF, "SOBRAS_POR_ATIVO")
+
+df_sem_outliers_ZscoreFHC1_UF <- df_FHC1_filteredUFLimpo$df_sem_outliers
+df_com_outliers_ZscoreFHC1_UF <- df_FHC1_filteredUFLimpo$df_com_outliers
+
+df_com_outliers_ZscoreFHC1_UF %>%
+  kable() %>%
+  kable_styling(full_width = FALSE)
+
+
+novo <- calcular_estatisticas(df_sem_outliers_ZscoreFHC1_UF, "Janela FHC1 (Z-score Estado)")
+novo
+
+
+df_FHC1_filteredUFLimpo10DP <- remover_outliers_zscore(df_FHC1_filteredUF, "SOBRAS_POR_ATIVO", threshold = 6)
+novo <- calcular_estatisticas(df_FHC1_filteredUFLimpo10DP$df_sem_outliers, "Janela FHC1 (Z-score Município)")
+novo
+
+
+```
+
+## Boxplot das Janelas FHC1
+```{r, echo=FALSE}
+
+# Criando os dois boxplots
+p1 <- ggplot(df_FHC1_filteredMunic, aes(y = SOBRAS_POR_ATIVO)) + 
+  geom_boxplot() + 
+  ggtitle("Todos dados da Janela FHC1 - Municípios ")+
+  theme(plot.title = element_text(hjust = 0.5))
+
+p2 <- ggplot(df_FHC1_filteredMunicLimpo$df_sem_outliers, aes(y = SOBRAS_POR_ATIVO)) + 
+  geom_boxplot() + 
+  ggtitle("Janela FHC1 - Municípios \nsem outliers a 3 desvios padrão") +
+  theme(plot.title = element_text(hjust = 0.5))
+
+# Exibindo os gráficos lado a lado
+grid.arrange(p1, p2, ncol = 2)
+
+
+# Criando os dois boxplots
+p1 <- ggplot(df_FHC1_filteredImed, aes(y = SOBRAS_POR_ATIVO)) + 
+  geom_boxplot() + 
+  ggtitle("Todos as dados da Janela FHC1 \nRegião Imediata ")+
+  theme(plot.title = element_text(hjust = 0.5))
+
+p2 <- ggplot(df_FHC1_filteredImedLimpo$df_sem_outliers, aes(y = SOBRAS_POR_ATIVO)) + 
+  geom_boxplot() + 
+  ggtitle("Janela FHC1 - Reg. Imediata \nsem Outliers a 3 desvios padrão")+
+  theme(plot.title = element_text(hjust = 0.5))
+
+# Exibindo os gráficos lado a lado
+grid.arrange(p1, p2, ncol = 2)
+
+
+# Criando os dois boxplots
+p1 <- ggplot(df_FHC1_filteredIntermed, aes(y = SOBRAS_POR_ATIVO)) + 
+  geom_boxplot() + 
+  ggtitle("Todos as dados da Janela FHC1 \nRegião Intermediária")+
+  theme(plot.title = element_text(hjust = 0.5))
+
+p2 <- ggplot(df_FHC1_filteredInterLimpo$df_sem_outliers, aes(y = SOBRAS_POR_ATIVO)) + 
+  geom_boxplot() + 
+  ggtitle("Reg. Int. da Janela FHC1 \nsem Outliers a 3 desvios padrão")+
+  theme(plot.title = element_text(hjust = 0.5))
+
+# Exibindo os gráficos lado a lado
+grid.arrange(p1, p2, ncol = 2)
+
+
+# Criando os dois boxplots
+p1 <- ggplot(df_FHC1_filteredUF, aes(y = SOBRAS_POR_ATIVO)) + 
+  geom_boxplot() + 
+  ggtitle("Todos as dados da Janela FHC1 \nEstado")+
+  theme(plot.title = element_text(hjust = 0.5))
+
+p2 <- ggplot(df_FHC1_filteredUFLimpo$df_sem_outliers, aes(y = SOBRAS_POR_ATIVO)) + 
+  geom_boxplot() + 
+  ggtitle("Estados da Janela FHC1\nsem Outliers a 3 desvios padrão (-1)")+
+  theme(plot.title = element_text(hjust = 0.5))
+
+# Exibindo os gráficos lado a lado
+grid.arrange(p1, p2, ncol = 2)
+
+
+```
+
+
+```{r, echo=FALSE, message=FALSE, warning=FALSE, fig.width=10, fig.height=8}
+# Carregar a biblioteca necessária
+library(ggplot2)
+library(gridExtra)
+
+# Gráfico 1: Contagem por Localização Município
+# p1 <- ggplot(df_Bolsonado_filteredMunic %>% filter(Ano == 2022), aes(x = factor(Localizacao_munic))) +
+#   geom_bar() +
+#   geom_text(stat = 'count', aes(label = ..count..), vjust = -0.5) + 
+#   labs(title = "Contagem por Localização Município", x = "Município", y = "Contagem") +
+#   theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+#   theme_minimal()
+
+# p1 <- ggplot(df_Bolsonado_filteredMunic %>% filter(Ano == 2022), 
+#              aes(x = factor(Localizacao_munic))) +
+#   geom_bar() +
+#   geom_text(stat = 'count', aes(label = ..count..), vjust = -0.5) +  # Aumenta o valor de vjust para posicionar melhor os números
+#   labs(title = "Contagem por Localização Município (Ano: 2022)", x = "Município", y = "Contagem") +
+#   theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+#   theme_minimal()
+# 
+# 
+# # Gráfico 2: Contagem por Estado (UF)
+# p2 <- ggplot(df_Bolsonado_filteredImed %>% filter(Ano == 2022), aes(x = factor(Localizacao_Imed))) +
+#   geom_bar() +
+#   geom_text(stat = 'count', aes(label = ..count..), vjust = -0.5) + 
+#   labs(title = "Contagem por Estado (UF)", x = "Estado (UF)", y = "Contagem") +
+#   theme_minimal()
+# 
+# # Gráfico 3: Contagem por Localização Imediata
+# p3 <- ggplot(df_Bolsonado_filteredIntermed %>% filter(Ano == 2022), aes(x = factor(Localizacao_Inter))) +
+#   geom_bar() +
+#   geom_text(stat = 'count', aes(label = ..count..), vjust = -0.5) + 
+#   labs(title = "Contagem por Localização Imediata", x = "Localização Imediata", y = "Contagem") +
+#   theme_minimal()
+# 
+# 
+# # Gráfico 4: Contagem por Localização Intermediária
+# p4 <- ggplot(df_Bolsonado_filteredUF %>% filter(Ano == 2022), aes(x = factor(Localizacao_UF))) +
+#   geom_bar() +
+#   geom_text(stat = 'count', aes(label = ..count..), vjust = -0.5) + 
+#   labs(title = "Contagem por Localização Intermediária", x = "Localização Intermediária", y = "Contagem") +
+#   theme_minimal()
+# 
+# 
+# # Organizar os gráficos em uma tabela 2x2
+# grid.arrange(p1, p2, p3, p4, ncol = 2)
+# 
+
+# Filtrar os dados para o ano de 2022
+df_filtered <- df_FHC1_filteredMunic %>% filter(Ano == 1995)
+
+# Criar uma tabela de frequências para a quantidade de ocorrências por município
+freq_table <- df_filtered %>%
+  count(Localizacao_munic) %>%  # Conta quantas vezes cada município aparece
+  count(n)  # Conta quantas vezes cada contagem de município aparece
+
+# Gráfico de barras mostrando a quantidade de vezes que cada contagem de município ocorre
+p <- ggplot(freq_table, aes(x = factor(n), y = nn)) + 
+  geom_bar(stat = "identity") +
+  geom_text(aes(label = nn), vjust = -0.5) +  # Adiciona os números em cima das barras
+  labs(title = "Distribuição de Contagens por Município (Janela FHC1)",
+       x = "Quantidade de Municípios",
+       y = "Frequência") +
+  theme_minimal()
+
+# Exibir o gráfico
+
+# Filtrar os dados para o ano de 2022
+df_filtered_imed <- df_FHC1_filteredImed %>% filter(Ano == 1995)
+
+# Criar uma tabela de frequências para a quantidade de ocorrências por Região Imediata
+freq_table_imed <- df_filtered_imed %>%
+  count(Cod_Reg_Imediata) %>%  # Conta quantas vezes cada Região Imediata aparece
+  count(n)  # Conta quantas vezes cada contagem de Região Imediata aparece
+
+# Gráfico de barras mostrando a quantidade de vezes que cada contagem de Região Imediata ocorre
+p_imed <- ggplot(freq_table_imed, aes(x = factor(n), y = nn)) + 
+  geom_bar(stat = "identity") +
+  geom_text(aes(label = nn), vjust = -0.5) +  # Adiciona os números em cima das barras
+  labs(title = "Distribuição de Contagens por Reg. Imediata (Janela FHC1)",
+       x = "Quantidade de Regiões Imediatas",
+       y = "Frequência") +
+  theme_minimal()
+
+# Exibir o gráfico
+
+# Filtrar os dados para o ano de 2022
+df_filtered_intermed <- df_FHC1_filteredIntermed %>% filter(Ano == 1995)
+
+# Criar uma tabela de frequências para a quantidade de ocorrências por Região Intermediária
+freq_table_intermed <- df_filtered_intermed %>%
+  count(Cod_Reg_Intermed) %>%  # Conta quantas vezes cada Região Intermediária aparece
+  count(n)  # Conta quantas vezes cada contagem de Região Intermediária aparece
+
+# Gráfico de barras mostrando a quantidade de vezes que cada contagem de Região Intermediária ocorre
+p_intermed <- ggplot(freq_table_intermed, aes(x = factor(n), y = nn)) + 
+  geom_bar(stat = "identity") +
+  geom_text(aes(label = nn), vjust = -0.5) +  # Adiciona os números em cima das barras
+  labs(title = "Distribuição de Contagens por Reg. Inter. (Janela FHC1)",
+       x = "Quantidade de Regiões Intermediárias",
+       y = "Frequência") +
+  theme_minimal()
+
+
+# Gráfico 4: Contagem por Localização Intermediária
+p4 <- ggplot(df_FHC1_filteredUF %>% filter(Ano == 1995), aes(x = factor(Localizacao_UF))) +
+  geom_bar() +
+  geom_text(stat = 'count', aes(label = ..count..), vjust = -0.5) +
+  labs(title = "Contagem por Localização Estadual", x = "Localização Estadual", y = "Contagem") +
+  theme_minimal()
+
+grid.arrange(p, p_imed, p_intermed, p4, ncol = 2)
+
+```
+
+---
+
+### Rodando a regressão usando **Modelos Lineares Mistos** com 3 níveis (1 - Ano; 2 - Unidade de Negócio; 3 - Localização. 
+
+##Estão sendo utilizadas as seguintes variáveis de localização: **Estado, Região Intermediária, Região Imediata e Município**. 
+
+```{r, semRemoverOutlierFHC1}
+
+mod_FHC1_Munic <- lmer(SOBRAS_POR_ATIVO ~ Ano + (1 | Unidade_de_Negocio) + (1 | Localizacao_munic), data = df_FHC1_filteredMunic)
+summary(mod_FHC1_Munic)
+
+mod_FHC1_UF <- lmer(SOBRAS_POR_ATIVO ~ Ano + (1 | Unidade_de_Negocio) + (1 | Localizacao_UF) , data = df_FHC1_filteredUF)
+summary(mod_FHC1_UF)
+
+mod_FHC1_Inter <- lmer(SOBRAS_POR_ATIVO ~ Ano + (1 | Unidade_de_Negocio) + (1 | Localizacao_Inter), data = df_FHC1_filteredIntermed)
+summary(mod_FHC1_Inter)
+
+mod_FHC1_Imed <- lmer(SOBRAS_POR_ATIVO ~ Ano + (1 | Unidade_de_Negocio) + (1 | Localizacao_Imed), data = df_FHC1_filteredImed)
+summary(mod_FHC1_Imed)
+
+
+
+```
+
+```{r, paraTestar3, echo=FALSE}
+mod_FHC1_Munic2 <- lmer(SOBRAS_POR_ATIVO ~ Ano + (1 | Unidade_de_Negocio) + (1 | Localizacao_munic), data = df_FHC1_filteredMunicLimpo$df_sem_outliers)
+#summary(mod_Lula2_Munic)
+
+mod_FHC1_UF2 <- lmer(SOBRAS_POR_ATIVO ~ Ano + (1 | Unidade_de_Negocio) + (1 | Localizacao_UF) , data = df_FHC1_filteredUFLimpo$df_sem_outliers)
+#summary(mod_Lula2_UF)
+
+mod_FHC1_Inter2 <- lmer(SOBRAS_POR_ATIVO ~ Ano + (1 | Unidade_de_Negocio) + (1 | Localizacao_Inter), data = df_FHC1_filteredInterLimpo$df_sem_outliers)
+#summary(mod_Lula2_Inter)
+
+mod_FHC1_Imed2 <- lmer(SOBRAS_POR_ATIVO ~ Ano + (1 | Unidade_de_Negocio) + (1 | Localizacao_Imed), data = df_FHC1_filteredImedLimpo$df_sem_outliers)
+#summary(mod_Lula2_Imed)
+
+
+```
+```{r, paraTestar4, echo=FALSE}
+
+mod_FHC1_Munic3 <- lmer(SOBRAS_POR_ATIVO ~ Ano + (1 | Unidade_de_Negocio) + (1 | Localizacao_munic), data = df_FHC1_filteredMunicLimpo10DP$df_sem_outliers)
+#summary(mod_Lula2_Munic)
+
+mod_FHC1_UF3 <- lmer(SOBRAS_POR_ATIVO ~ Ano + (1 | Unidade_de_Negocio) + (1 | Localizacao_UF) , data = df_FHC1_filteredUFLimpo10DP$df_sem_outliers)
+#summary(mod_Lula2_UF)
+
+mod_FHC1_Inter3 <- lmer(SOBRAS_POR_ATIVO ~ Ano + (1 | Unidade_de_Negocio) + (1 | Localizacao_Inter), data = df_FHC1_filteredInterLimpo10DP$df_sem_outliers)
+#summary(mod_Lula2_Inter)
+
+mod_FHC1_Imed3 <- lmer(SOBRAS_POR_ATIVO ~ Ano + (1 | Unidade_de_Negocio) + (1 | Localizacao_Imed), data = df_FHC1_filteredImedLimpo10DP$df_sem_outliers)
+#summary(mod_Lula2_Imed)
+
+```
+
+
+
+# Base de dados original e sem outlier com 3 desvios padrão
+```{r, echo=FALSE}
+
+library(grid)  # Necessário para usar grid.text
+library(gridExtra)  # Caso esteja usando grid.arrange
+library(cowplot)
+
+# Gerar gráficos de pizza para cada modelo
+plot_Munic <- plot_pizza_2D(mod_FHC1_Munic)
+plot_Imed <- plot_pizza_2D(mod_FHC1_Imed)
+plot_Inter <- plot_pizza_2D(mod_FHC1_Inter)
+plot_UF <- plot_pizza_2D(mod_FHC1_UF)
+
+plot_Munic2 <- plot_pizza_2D(mod_FHC1_Munic2)
+plot_Imed2 <- plot_pizza_2D(mod_FHC1_Imed2)
+plot_Inter2 <- plot_pizza_2D(mod_FHC1_Inter2)
+plot_UF2 <- plot_pizza_2D(mod_FHC1_UF2)
+
+plot_Munic3 <- plot_pizza_2D(mod_FHC1_Munic3)
+plot_Imed3 <- plot_pizza_2D(mod_FHC1_Imed3)
+plot_Inter3 <- plot_pizza_2D(mod_FHC1_Inter3)
+plot_UF3 <- plot_pizza_2D(mod_FHC1_UF3)
+
+
+
+# Organizar os gráficos lado a lado com plot_grid()
+plot_grid(plot_Munic, plot_Imed, plot_Inter, plot_UF, 
+          plot_Munic2, plot_Imed2, plot_Inter2, plot_UF2, 
+          plot_Munic3, plot_Imed3, plot_Inter3, plot_UF3, 
+          ncol = 4)
+
+
+
+
+
+```
+
+
+## **Componentes de variância lado a lado para análise quantitativa entre os modelos**.
+```{r, echo=FALSE}
+# Executar a comparação com os 4 modelos
+models <- list(mod_FHC1_Munic, mod_FHC1_Imed, mod_FHC1_Inter ,mod_FHC1_UF )
+names <- c("FHC1 Munic", "FHC1 Imed", "FHC1 Inter", "FHC1 UF")
+
+comparison_table <- compare_variances(models, names)
+comparison_table
+```
+
+
+## **Comparando AIC e BIC para os modelos**
+```{r, echo=FALSE}
+
+model_comparison <- data.frame(
+  Model = c("FHC1 UF", "FHC1 Inter", "FHC1 Imed", "FHC1 Munic"),
+  AIC = c(AIC(mod_FHC1_UF), AIC(mod_FHC1_Inter), AIC(mod_FHC1_Imed), AIC(mod_FHC1_Munic)),
+  BIC = c(BIC(mod_FHC1_UF), BIC(mod_FHC1_Inter), BIC(mod_FHC1_Imed), BIC(mod_FHC1_Munic))
+)
+model_comparison
+
+```

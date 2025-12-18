@@ -1,0 +1,239 @@
+---
+title: "testeRange"
+author: "Cleverton Marlon Possani"
+date: "2024-10-04"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Introdução
+
+Esta pesquisa tem como objetivo analisar o desempenho das cooperativas de crédito brasileiras, com foco em decompor e identificar a contribuição da localização geográfica para a variabilidade do desempenho dessas instituições. 
+
+No campo da gestão estratégica, a simples eliminação de outliers não é apropriada, uma vez que resultados atípicos podem refletir tanto boas práticas de gestão quanto problemas estruturais, sendo cruciais para uma compreensão mais aprofundada da realidade das cooperativas. Para garantir uma análise robusta e representativa, propõe-se a adoção de um intervalo amplo de valores de ROA (Retorno sobre Ativos), que permita avaliar o desempenho das cooperativas dentro de uma faixa que capture a diversidade de contextos regionais e operacionais. 
+
+O intervalo de -10% a +20% de rentabilidade sobre os ativos é sugerido como adequado para refletir a realidade dessas instituições. Esse intervalo busca incluir tanto cooperativas com desempenho excepcional quanto aquelas que enfrentam desafios significativos, assegurando que a análise considere as particularidades locais e os fatores econômicos e sociais que influenciam o setor.
+
+```{r FHC12, echo=FALSE}
+
+df_FHC12_negativos <- df_FHC12[df_FHC12$SOBRAS_POR_ATIVO < 0, ]
+df_FHC12_negativosDecil <- df_FHC12_negativos %>%
+  mutate(Decil = ntile(SOBRAS_POR_ATIVO, 10))
+
+df_FHC12$SOBRAS_POR_ATIVO_PCT <- df_FHC12$SOBRAS_POR_ATIVO * 100
+df_FHC12_filtrado <- df_FHC12[df_FHC12$SOBRAS_POR_ATIVO_PCT >= -10 & df_FHC12$SOBRAS_POR_ATIVO_PCT <= 20, ]
+
+# Criar histograma para SOBRAS_POR_ATIVO_PCT no DataFrame filtrado
+ggplot(df_FHC12_filtrado, aes(x = SOBRAS_POR_ATIVO_PCT)) +
+  geom_histogram(bins = 30, fill = "blue", color = "black", aes(y = ..count..)) +
+  geom_text(stat = 'bin', aes(label = ..count.., y = ..count.. + 10), vjust = -0.5) +  # Aumentar o valor de y para posicionar melhor
+  labs(title = "Histograma de SOBRAS POR ATIVO (%) JANELA FHC12",
+       x = "SOBRAS POR ATIVO (%)",
+       y = "Frequência") +
+  theme_minimal()
+
+total_linhas_original <- nrow(df_FHC12)
+total_linhas_filtrado <- nrow(df_FHC12_filtrado)
+porcentagem_filtrado <- (total_linhas_filtrado / total_linhas_original) * 100
+
+print(paste("A seleção feita em df_filtrado representa", round(porcentagem_filtrado, 2), "% do total original."))
+
+# Selecionar os valores fora da faixa de -10% a 20%
+df_fora_faixa <- df_FHC12 %>%
+  filter(SOBRAS_POR_ATIVO_PCT < -10 | SOBRAS_POR_ATIVO_PCT > 20)
+
+# Separar valores negativos
+df_negativos <- df_fora_faixa %>%
+  filter(SOBRAS_POR_ATIVO_PCT < 0)
+
+# Separar valores positivos
+df_positivos <- df_fora_faixa %>%
+  filter(SOBRAS_POR_ATIVO_PCT > 0)
+
+gerar_mapa_cooperativas(df_positivos, "FHC12 Outliers Positivos")
+
+gerar_mapa_cooperativas(df_negativos, "FHC12 Outliers Negativos")
+
+df_FHC12_Decil <- df_FHC12_filtrado %>%
+  mutate(Decil = ntile(SOBRAS_POR_ATIVO, 10))
+
+# Criar boxplot com médias visíveis
+ggplot(df_FHC12_Decil, aes(x = factor(Decil), y = SOBRAS_POR_ATIVO_PCT)) +
+  geom_boxplot(fill = "lightblue") +
+  stat_summary(fun = "mean", geom = "point", shape = 18, color = "red", size = 3) +  # Adicionar pontos de média
+  stat_summary(fun = "mean", geom = "text", aes(label = round(..y.., 2)), vjust = -0.5, color = "red") +  # Mostrar o valor da média
+  labs(title = "Distribuição de SOBRAS POR ATIVO (%) por Decil com Médias",
+       x = "Decil",
+       y = "SOBRAS POR ATIVO (%)") +
+  theme_minimal()
+
+
+```
+```{r Lula12, echo=FALSE}
+
+df_Lula12_negativos <- df_Lula12[df_Lula12$SOBRAS_POR_ATIVO < 0, ]
+df_Lula12_negativosDecil <- df_Lula12_negativos %>%
+  mutate(Decil = ntile(SOBRAS_POR_ATIVO, 10))
+
+df_Lula12$SOBRAS_POR_ATIVO_PCT <- df_Lula12$SOBRAS_POR_ATIVO * 100
+df_Lula12_filtrado <- df_Lula12[df_Lula12$SOBRAS_POR_ATIVO_PCT >= -10 & df_Lula12$SOBRAS_POR_ATIVO_PCT <= 20, ]
+
+# Criar histograma para SOBRAS_POR_ATIVO_PCT no DataFrame filtrado
+ggplot(df_Lula12_filtrado, aes(x = SOBRAS_POR_ATIVO_PCT)) +
+  geom_histogram(bins = 30, fill = "blue", color = "black", aes(y = ..count..)) +
+  geom_text(stat = 'bin', aes(label = ..count.., y = ..count.. + 10), vjust = -0.5) +  # Aumentar o valor de y para posicionar melhor
+  labs(title = "Histograma de SOBRAS POR ATIVO (%) JANELA LULA12",
+       x = "SOBRAS POR ATIVO (%)",
+       y = "Frequência") +
+  theme_minimal()
+
+total_linhas_original <- nrow(df_Lula12)
+total_linhas_filtrado <- nrow(df_Lula12_filtrado)
+porcentagem_filtrado <- (total_linhas_filtrado / total_linhas_original) * 100
+
+print(paste("A seleção feita em df_filtrado representa", round(porcentagem_filtrado, 2), "% do total original."))
+
+# Selecionar os valores fora da faixa de -10% a 20%
+df_fora_faixa <- df_Lula12 %>%
+  filter(SOBRAS_POR_ATIVO_PCT < -10 | SOBRAS_POR_ATIVO_PCT > 20)
+
+# Separar valores negativos
+df_negativos <- df_fora_faixa %>%
+  filter(SOBRAS_POR_ATIVO_PCT < 0)
+
+# Separar valores positivos
+df_positivos <- df_fora_faixa %>%
+  filter(SOBRAS_POR_ATIVO_PCT > 0)
+
+gerar_mapa_cooperativas(df_positivos, "Lula12 Outliers Positivos")
+
+gerar_mapa_cooperativas(df_negativos, "Lula12 Outliers Negativos")
+
+df_Lula12_Decil <- df_Lula12_filtrado %>%
+  mutate(Decil = ntile(SOBRAS_POR_ATIVO, 10))
+
+# Criar boxplot com médias visíveis
+ggplot(df_Lula12_Decil, aes(x = factor(Decil), y = SOBRAS_POR_ATIVO_PCT)) +
+  geom_boxplot(fill = "lightblue") +
+  stat_summary(fun = "mean", geom = "point", shape = 18, color = "red", size = 3) +  # Adicionar pontos de média
+  stat_summary(fun = "mean", geom = "text", aes(label = round(..y.., 2)), vjust = -0.5, color = "red") +  # Mostrar o valor da média
+  labs(title = "Distribuição de SOBRAS POR ATIVO (%) por Decil com Médias",
+       x = "Decil",
+       y = "SOBRAS POR ATIVO (%)") +
+  theme_minimal()
+
+
+```
+```{r Dilma12, echo=FALSE}
+
+df_Dilma12_negativos <- df_Dilma12[df_Dilma12$SOBRAS_POR_ATIVO < 0, ]
+df_Dilma12_negativosDecil <- df_Dilma12_negativos %>%
+  mutate(Decil = ntile(SOBRAS_POR_ATIVO, 10))
+
+df_Dilma12$SOBRAS_POR_ATIVO_PCT <- df_Dilma12$SOBRAS_POR_ATIVO * 100
+df_Dilma12_filtrado <- df_Dilma12[df_Dilma12$SOBRAS_POR_ATIVO_PCT >= -10 & df_Dilma12$SOBRAS_POR_ATIVO_PCT <= 20, ]
+
+# Criar histograma para SOBRAS_POR_ATIVO_PCT no DataFrame filtrado
+ggplot(df_Dilma12_filtrado, aes(x = SOBRAS_POR_ATIVO_PCT)) +
+  geom_histogram(bins = 30, fill = "blue", color = "black", aes(y = ..count..)) +
+  geom_text(stat = 'bin', aes(label = ..count.., y = ..count.. + 10), vjust = -0.5) +  # Aumentar o valor de y para posicionar melhor
+  labs(title = "Histograma de SOBRAS POR ATIVO (%) JANELA DILMA12",
+       x = "SOBRAS POR ATIVO (%)",
+       y = "Frequência") +
+  theme_minimal()
+
+total_linhas_original <- nrow(df_Dilma12)
+total_linhas_filtrado <- nrow(df_Dilma12_filtrado)
+porcentagem_filtrado <- (total_linhas_filtrado / total_linhas_original) * 100
+
+print(paste("A seleção feita em df_filtrado representa", round(porcentagem_filtrado, 2), "% do total original."))
+
+# Selecionar os valores fora da faixa de -10% a 20%
+df_fora_faixa <- df_Dilma12 %>%
+  filter(SOBRAS_POR_ATIVO_PCT < -10 | SOBRAS_POR_ATIVO_PCT > 20)
+
+# Separar valores negativos
+df_negativos <- df_fora_faixa %>%
+  filter(SOBRAS_POR_ATIVO_PCT < 0)
+
+# Separar valores positivos
+df_positivos <- df_fora_faixa %>%
+  filter(SOBRAS_POR_ATIVO_PCT > 0)
+
+gerar_mapa_cooperativas(df_positivos, "Dilma12 Outliers Positivos")
+
+gerar_mapa_cooperativas(df_negativos, "Dilma12 Outliers Negativos")
+
+df_Dilma12_Decil <- df_Dilma12_filtrado %>%
+  mutate(Decil = ntile(SOBRAS_POR_ATIVO, 10))
+
+# Criar boxplot com médias visíveis
+ggplot(df_Dilma12_Decil, aes(x = factor(Decil), y = SOBRAS_POR_ATIVO_PCT)) +
+  geom_boxplot(fill = "lightblue") +
+  stat_summary(fun = "mean", geom = "point", shape = 18, color = "red", size = 3) +  # Adicionar pontos de média
+  stat_summary(fun = "mean", geom = "text", aes(label = round(..y.., 2)), vjust = -0.5, color = "red") +  # Mostrar o valor da média
+  labs(title = "Distribuição de SOBRAS POR ATIVO (%) por Decil com Médias",
+       x = "Decil",
+       y = "SOBRAS POR ATIVO (%)") +
+  theme_minimal()
+
+
+
+```
+```{r TemerBolsonado, echo=FALSE}
+
+df_TemerBolsonaro_negativos <- df_TemerBolsonaro[df_TemerBolsonaro$SOBRAS_POR_ATIVO < 0, ]
+df_TemerBolsonaro_negativosDecil <- df_TemerBolsonaro_negativos %>%
+  mutate(Decil = ntile(SOBRAS_POR_ATIVO, 10))
+
+df_TemerBolsonaro$SOBRAS_POR_ATIVO_PCT <- df_TemerBolsonaro$SOBRAS_POR_ATIVO * 100
+df_TemerBolsonaro_filtrado <- df_TemerBolsonaro[df_TemerBolsonaro$SOBRAS_POR_ATIVO_PCT >= -10 & df_TemerBolsonaro$SOBRAS_POR_ATIVO_PCT <= 20, ]
+
+# Criar histograma para SOBRAS_POR_ATIVO_PCT no DataFrame filtrado
+ggplot(df_TemerBolsonaro_filtrado, aes(x = SOBRAS_POR_ATIVO_PCT)) +
+  geom_histogram(bins = 30, fill = "blue", color = "black", aes(y = ..count..)) +
+  geom_text(stat = 'bin', aes(label = ..count.., y = ..count.. + 10), vjust = -0.5) +  # Aumentar o valor de y para posicionar melhor
+  labs(title = "Histograma de SOBRAS POR ATIVO (%) JANELA TEMERBOLSONARO",
+       x = "SOBRAS POR ATIVO (%)",
+       y = "Frequência") +
+  theme_minimal()
+
+total_linhas_original <- nrow(df_TemerBolsonaro)
+total_linhas_filtrado <- nrow(df_TemerBolsonaro_filtrado)
+porcentagem_filtrado <- (total_linhas_filtrado / total_linhas_original) * 100
+
+print(paste("A seleção feita em df_filtrado representa", round(porcentagem_filtrado, 2), "% do total original."))
+
+# Selecionar os valores fora da faixa de -10% a 20%
+df_fora_faixa <- df_TemerBolsonaro %>%
+  filter(SOBRAS_POR_ATIVO_PCT < -10 | SOBRAS_POR_ATIVO_PCT > 20)
+
+# Separar valores negativos
+df_negativos <- df_fora_faixa %>%
+  filter(SOBRAS_POR_ATIVO_PCT < 0)
+
+# Separar valores positivos
+df_positivos <- df_fora_faixa %>%
+  filter(SOBRAS_POR_ATIVO_PCT > 0)
+
+gerar_mapa_cooperativas(df_positivos, "TemerBolsonaro Outliers Positivos")
+
+gerar_mapa_cooperativas(df_negativos, "TemerBolsonaro Outliers Negativos")
+
+df_TemerBolsonaro_Decil <- df_TemerBolsonaro_filtrado %>%
+  mutate(Decil = ntile(SOBRAS_POR_ATIVO, 10))
+
+# Criar boxplot com médias visíveis
+ggplot(df_TemerBolsonaro_Decil, aes(x = factor(Decil), y = SOBRAS_POR_ATIVO_PCT)) +
+  geom_boxplot(fill = "lightblue") +
+  stat_summary(fun = "mean", geom = "point", shape = 18, color = "red", size = 3) +  # Adicionar pontos de média
+  stat_summary(fun = "mean", geom = "text", aes(label = round(..y.., 2)), vjust = -0.5, color = "red") +  # Mostrar o valor da média
+  labs(title = "Distribuição de SOBRAS POR ATIVO (%) por Decil com Médias",
+       x = "Decil",
+       y = "SOBRAS POR ATIVO (%)") +
+  theme_minimal()
+
+```

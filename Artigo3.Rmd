@@ -1,0 +1,29 @@
+---
+title: "Análise de Regressão para o Artigo 3"
+author: "Seu Nome"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+# Carregar pacotes necessários
+library(readxl)
+library(lme4)
+library(dplyr)
+library(ggplot2)
+```
+
+## R Markdown
+
+This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+
+When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+
+```{r ROA}
+# Ajustar o modelo de regressão multinível com Ano como variável fixa
+modelo_ROA <- lmer(SOBRAS_POR_ATIVO ~ IFDM_Emp_Renda + IFDM_Edu + VAB + Ano + (1 | Localizacao_munic), data = df_Art3)
+modelo_ROA <- lmer(SOBRAS_POR_ATIVO ~ VAB + (1 | Localizacao_munic), data = df_Art3)
+
+# Resumo do modelo
+summary(modelo_ROA)
+
+```

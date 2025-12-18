@@ -1,0 +1,4 @@
+"grp","var1","var2","vcov","sdcor","Modelo"
+"Unidade_de_Negocio","(Intercept)",NA,0.000410312742366378,0.0202561778814854,"Temer-Bolsonaro"
+"Localizacao_munic","(Intercept)",NA,3.50454700444945e-05,0.00591992145593964,"Temer-Bolsonaro"
+"Residual",NA,NA,0.000283080821140352,0.0168250058288356,"Temer-Bolsonaro"

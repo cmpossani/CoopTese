@@ -1,0 +1,17 @@
+# R / RStudio
+.Rproj.user/
+.Rhistory
+.RData
+.RDataTmp
+*.RData
+
+# R Markdown outputs
+*_files/
+*.html
+*.log
+
+# Dados locais (se você não quer versionar)
+*.rds
+
+# (Opcional) Outputs gerados
+outputs/

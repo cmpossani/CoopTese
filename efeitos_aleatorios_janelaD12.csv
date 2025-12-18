@@ -1,0 +1,4 @@
+"grp","var1","var2","vcov","sdcor","Modelo"
+"Unidade_de_Negocio","(Intercept)",NA,0.000395191393798407,0.0198794213647784,"Dilma 12"
+"Localizacao_munic","(Intercept)",NA,2.89784640915084e-06,0.00170230620311119,"Dilma 12"
+"Residual",NA,NA,0.000372441000035087,0.019298730529107,"Dilma 12"
